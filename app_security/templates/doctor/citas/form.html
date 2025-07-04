@@ -1,0 +1,565 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ form.instance.pk|yesno:"Editar,Crear" }} Cita Médica{% endblock %}
+{% block content %}
+{% include 'fragments/messages.html' %}
+{% include 'fragments/form_errors.html' %}
+<style>
+:root {
+    --primary-blue: #2563eb;
+    --aurora1: #6366f1;
+    --aurora2: #22d3ee;
+    --aurora3: #fbbf24;
+    --btn-login: #4f8cff;
+    --btn-login-hover: #6f4fff;
+    --gold-premium: #ffd700;
+    --gold-light: #ffe066;
+    --gold-bg: #fffbe7;
+    --gold-hover: #fff7b2;
+    --gold-soft: #e6c97a;
+    --text-dark: #111827;
+    --text-secondary: #64748b;
+    --text-sidebar: #374151;
+    --bg-body: #f9fafb;
+    --bg-secondary: #e0e7ff;
+    --text-shadow: #c7d2fe44;
+    --danger: #ef4444;
+}
+.premium-form-card {
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(24px);
+    border: 2.5px solid var(--gold-premium);
+    box-shadow: 0 24px 48px -12px var(--aurora1), 0 0 0 4px var(--gold-light);
+    border-radius: 2.5rem;
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
+    max-width: 38rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInCard 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes fadeInCard {
+    0% { opacity: 0; transform: translateY(40px) scale(0.98); }
+    100% { opacity: 1; transform: none; }
+}
+.premium-form-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, var(--aurora1) 0%, var(--aurora2) 100%);
+    opacity: 0.08;
+    z-index: 0;
+    pointer-events: none;
+}
+.premium-form-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    letter-spacing: 0.03em;
+    animation: fadeInTitle 1.2s cubic-bezier(0.4,0,0.2,1);
+    justify-content: center;
+    text-align: center;
+}
+.premium-form-title .premium-title-text {
+    background: linear-gradient(90deg, var(--aurora1), var(--aurora2), var(--gold-premium));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+@keyframes fadeInTitle {
+    0% { opacity: 0; transform: translateY(-30px); }
+    100% { opacity: 1; transform: none; }
+}
+.premium-form-title i {
+    color: var(--gold-premium);
+    font-size: 2.7rem;
+    filter: drop-shadow(0 2px 4px var(--gold-soft));
+}
+.premium-form-group {
+    margin-bottom: 1.7rem;
+    position: relative;
+}
+.premium-form-label {
+    display: block;
+    font-weight: 700;
+    color: var(--aurora1);
+    margin-bottom: 0.5rem;
+    font-size: 1.13rem;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 8px var(--text-shadow);
+}
+.premium-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.premium-input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--aurora2);
+    font-size: 1.2rem;
+    pointer-events: none;
+    transition: color 0.2s;
+    z-index: 2;
+}
+.premium-form-card input,
+.premium-form-card select,
+.premium-form-card textarea {
+    width: 100%;
+    border-radius: 1rem;
+    border: 2px solid var(--gold-premium);
+    background: rgba(255,255,255,0.93);
+    padding: 0.85rem 1.25rem 0.85rem 2.7rem;
+    font-size: 1.08rem;
+    color: var(--text-dark);
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 2px 8px 0 var(--aurora1);
+    outline: none;
+    z-index: 1;
+}
+.premium-form-card input:focus,
+.premium-form-card select:focus,
+.premium-form-card textarea:focus {
+    border-color: var(--aurora1);
+    background: rgba(255,255,255,0.99);
+    box-shadow: 0 0 0 6px var(--aurora2);
+}
+.premium-form-error {
+    display: inline-block;
+    background: var(--gold-bg);
+    color: var(--danger);
+    border: 1.5px solid var(--gold-premium);
+    border-radius: 0.75rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.98rem;
+    margin-bottom: 0.5rem;
+    margin-top: 0.2rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px 0 var(--gold-light);
+    animation: fadeInError 0.5s;
+}
+@keyframes fadeInError {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: none; }
+}
+.premium-form-help {
+    font-size: 0.97rem;
+    color: var(--aurora2);
+    margin-top: 0.2rem;
+    margin-left: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.premium-form-btn {
+    background: linear-gradient(135deg, var(--aurora1) 0%, var(--aurora2) 100%);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 1.2rem;
+    padding: 0.85rem 2.2rem;
+    font-size: 1.15rem;
+    box-shadow: 0 10px 15px -3px var(--primary-blue), 0 0 0 1px var(--aurora1);
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    border: 2px solid var(--gold-premium);
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.premium-form-btn:hover {
+    background: linear-gradient(135deg, var(--btn-login) 0%, var(--btn-login-hover) 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 16px 32px -8px var(--aurora1), 0 0 0 3px var(--gold-premium);
+}
+.premium-form-cancel {
+    border: 2px solid var(--gold-premium);
+    color: var(--aurora1);
+    background: var(--gold-bg);
+    border-radius: 1.2rem;
+    padding: 0.85rem 2.2rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-left: 1rem;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.premium-form-cancel:hover {
+    background: var(--gold-hover);
+    color: var(--aurora2);
+}
+.premium-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    background: var(--gold-bg);
+    border: 2px solid var(--gold-premium);
+    border-radius: 1.1rem;
+    padding: 0.5rem 1.2rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 1.08rem;
+    box-shadow: 0 2px 8px 0 var(--aurora1);
+    cursor: pointer;
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.premium-checkbox input[type=checkbox] {
+    accent-color: var(--aurora1);
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 0.5rem;
+}
+.premium-checkbox .fa-clock {
+    color: var(--aurora2);
+    font-size: 1.2rem;
+    margin-right: 0.3rem;
+}
+.premium-checkbox input[type=checkbox]:focus + span {
+    outline: 2px solid var(--aurora2);
+    outline-offset: 2px;
+}
+@media (max-width: 640px) {
+    .premium-form-card {
+        padding: 1.25rem 0.5rem;
+        border-radius: 1.2rem;
+    }
+    .premium-form-title {
+        font-size: 1.5rem;
+        gap: 0.5rem;
+    }
+    .premium-form-title i {
+        font-size: 1.5rem;
+    }
+}
+</style>
+<div class="premium-form-card mx-auto">
+    <h2 class="premium-form-title">
+        <span style="display:inline-block; background:linear-gradient(90deg, var(--aurora1), var(--aurora2) 80%, var(--gold-light) 100%); border-radius:1.2rem; padding:0.3rem 0.7rem; box-shadow:0 2px 12px var(--aurora1); margin-right:0.4rem;">
+            <i class="fas fa-calendar-check" style="color:var(--gold-premium); filter:drop-shadow(0 2px 6px var(--gold-light));"></i>
+        </span>
+        <span class="premium-title-text">{{ form.instance.pk|yesno:'Editar Cita Médica,Nueva Cita Médica' }}</span>
+    </h2>
+    <form method="post" novalidate id="citaForm" autocomplete="off">
+        {% csrf_token %}
+        {% if doctor %}
+        <div class="premium-form-group">
+            <label class="premium-form-label">Cita para el Dr. {{ doctor.nombre }}</label>
+            <div class="premium-input-wrapper">
+                <i class="fas fa-user-md premium-input-icon"></i>
+                <span style="font-weight:600; color:var(--aurora1);">Usuario: {{ doctor.user.email }}</span>
+            </div>
+        </div>
+        {% endif %}
+        <div class="premium-form-group">
+            <label for="paciente-autocomplete" class="premium-form-label">Buscar paciente <span class="text-red-500">*</span></label>
+            <div class="premium-input-wrapper">
+                <i class="fas fa-user premium-input-icon"></i>
+                <input type="text" id="paciente-autocomplete" name="paciente-autocomplete" class="w-full" placeholder="🔍 Buscar paciente..." autocomplete="off">
+                <input type="hidden" id="id_paciente" name="paciente" value="{{ form.initial.paciente|default:'' }}">
+                <div id="paciente-suggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden"></div>
+            </div>
+            <button type="button" id="crear-paciente-btn" class="mt-2 premium-form-btn" style="background:var(--aurora2); color:#fff;">
+                <i class="fas fa-user-plus"></i> Crear paciente
+            </button>
+        </div>
+        {% for field in form.visible_fields %}
+            {% if field.name == 'fecha' %}
+            <div class="premium-form-group {% if field.errors %}has-error{% endif %}">
+                <label for="{{ field.id_for_label }}" class="premium-form-label">{{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                <div class="premium-input-wrapper">
+                    <i class="fas fa-calendar premium-input-icon"></i>
+                    {{ field }}
+                </div>
+                {% if field.errors %}
+                <div class="premium-form-error">{{ field.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <!-- Campo dinámico de horarios justo debajo de la fecha -->
+            <div class="premium-form-group">
+                <label class="premium-form-label">Horarios de Atención:</label>
+                <div id="id_hora_cita_radios" class="min-h-[2.5rem] text-gray-600">
+                    <span class="italic text-gray-400">Seleccione una fecha para ver los horarios disponibles.</span>
+                </div>
+            </div>
+            {% elif field.name != 'paciente' and field.name != 'hora_cita' %}
+            <div class="premium-form-group {% if field.errors %}has-error{% endif %}">
+                <label for="{{ field.id_for_label }}" class="premium-form-label">{{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                <div class="premium-input-wrapper">
+                    <i class="fas fa-pen premium-input-icon"></i>
+                    {{ field }}
+                </div>
+                {% if field.errors %}
+                <div class="premium-form-error">{{ field.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endfor %}
+        <input type="hidden" id="id_hora_cita" name="hora_cita" value="{{ form.initial.hora_cita|default:'' }}" />
+        {% if form.non_field_errors %}
+        <div class="premium-form-error mt-4">
+            {% for error in form.non_field_errors %}
+            <div class="flex items-center mt-0.5">
+                <i class="fa-solid fa-circle-exclamation text-xs mr-1"></i>
+                {{ error }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="flex justify-center mt-6 gap-4">
+            <button type="submit" class="premium-form-btn">
+                <i class="fas fa-floppy-disk"></i>
+                Guardar
+            </button>
+            <a href="{% url 'doctor:cita_list' %}" class="premium-form-cancel">
+                <i class="fas fa-xmark"></i>
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+<script>
+document.getElementById('citaForm').addEventListener('submit', function(e) {
+    let paciente = document.getElementById('id_paciente');
+    let doctor = document.getElementById('{{ form.doctor.id_for_label }}');
+    let fecha = document.getElementById('{{ form.fecha.id_for_label }}');
+    let hora = document.getElementById('id_hora_cita');
+    let valid = true;
+    if (!paciente.value) {
+        alert('Debe seleccionar un paciente.');
+        paciente.focus();
+        valid = false;
+    }
+    if (!doctor.value) {
+        alert('Debe seleccionar un doctor.');
+        doctor.focus();
+        valid = false;
+    }
+    if (!fecha.value) {
+        alert('Debe ingresar una fecha.');
+        fecha.focus();
+        valid = false;
+    }
+    if (!hora.value) {
+        alert('Debe ingresar una hora.');
+        hora.focus();
+        valid = false;
+    }
+    if (!valid) e.preventDefault();
+});
+// --- Autocompletado premium de paciente ---
+const pacienteInput = document.getElementById('paciente-autocomplete');
+const pacienteHidden = document.getElementById('id_paciente');
+const suggestionsBox = document.getElementById('paciente-suggestions');
+let debounceTimeout = null;
+
+pacienteInput.addEventListener('input', function() {
+    const q = this.value.trim();
+    if (q.length < 3) {
+        suggestionsBox.classList.add('hidden');
+        return;
+    }
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => {
+        fetch('/core/paciente_find/?q=' + encodeURIComponent(q))
+            .then(r => r.json())
+            .then(data => {
+                if (data.pacientes && data.pacientes.length > 0) {
+                    suggestionsBox.innerHTML = data.pacientes.map(p =>
+                        `<div class='px-4 py-2 hover:bg-blue-100 cursor-pointer' data-id='${p.id}' data-nombre='${p.nombres} ${p.apellidos}'>
+                            <span class='font-semibold'>${p.nombres} ${p.apellidos}</span> <span class='text-xs text-gray-500'>${p.cedula || p.dni || ''}</span>
+                        </div>`
+                    ).join('');
+                    suggestionsBox.classList.remove('hidden');
+                } else {
+                    suggestionsBox.innerHTML = `<div class='px-4 py-2 text-gray-500'>No se encontraron pacientes</div>`;
+                    suggestionsBox.classList.remove('hidden');
+                }
+            });
+    }, 250);
+});
+suggestionsBox.addEventListener('click', function(e) {
+    const el = e.target.closest('[data-id]');
+    if (el) {
+        pacienteInput.value = el.getAttribute('data-nombre');
+        pacienteHidden.value = el.getAttribute('data-id');
+        suggestionsBox.classList.add('hidden');
+    }
+});
+document.addEventListener('click', function(e) {
+    if (!suggestionsBox.contains(e.target) && e.target !== pacienteInput) {
+        suggestionsBox.classList.add('hidden');
+    }
+});
+document.getElementById('crear-paciente-btn').onclick = function() {
+    window.open('/core/pacientes/nuevo/', '_blank');
+};
+// --- Horarios dinámicos AJAX ---
+function renderHorariosRadios(horarios) {
+    const radiosDiv = document.getElementById('id_hora_cita_radios');
+    const hiddenHoraInput = document.getElementById('id_hora_cita');
+    if (!radiosDiv) return;
+    if (!horarios || horarios.length === 0) {
+        radiosDiv.innerHTML = '<div class="premium-form-error">No hay horarios disponibles para la fecha seleccionada.</div>';
+        hiddenHoraInput.value = '';
+        return;
+    }
+    let html = '';
+    horarios.forEach((h, idx) => {
+        html += `
+            <label class="premium-checkbox">
+                <input type="radio" name="hora_cita" value="${h.value}" />
+                <i class="fa-regular fa-clock"></i>
+                <span>${h.label}</span>
+            </label>
+        `;
+    });
+    radiosDiv.innerHTML = html;
+    // Al seleccionar radio, actualiza el hidden con el valor seleccionado
+    function updateHidden() {
+        const seleccionado = radiosDiv.querySelector('input[type=radio][name=hora_cita]:checked');
+        hiddenHoraInput.value = seleccionado ? seleccionado.value : '';
+    }
+    radiosDiv.querySelectorAll('input[type=radio][name=hora_cita]').forEach(radio => {
+        radio.addEventListener('change', updateHidden);
+    });
+    // Limpia el hidden al cargar
+    hiddenHoraInput.value = '';
+}
+
+function fetchHorariosDisponibles() {
+    const fechaInput = document.getElementById('id_fecha');
+    const doctorId = window.UNICO_DOCTOR_ID;
+    const hiddenHoraInput = document.getElementById('id_hora_cita');
+    if (!fechaInput || !doctorId) {
+        //console.log('[DEBUG] Falta fecha o doctorId', fechaInput, doctorId);
+        return;
+    }
+    const fecha = fechaInput.value;
+    if (!fecha) {
+        renderHorariosRadios([]);
+        return;
+    }
+    //console.log('[DEBUG] Solicitando horarios para fecha:', fecha, 'doctorId:', doctorId);
+    fetch(`/doctor/ajax/horarios_disponibles/?fecha=${encodeURIComponent(fecha)}&doctor_id=${doctorId}`)
+        .then(r => r.json())
+        .then(data => {
+            //console.log('[DEBUG] Respuesta AJAX horarios:', data);
+            if (data.horarios && data.horarios.length > 0) {
+                renderHorariosRadios(data.horarios);
+            } else {
+                document.getElementById('id_hora_cita_radios').innerHTML = `<div class='premium-form-error'>${data.debug || 'No hay horarios disponibles.'}</div>`;
+                hiddenHoraInput.value = '';
+            }
+        })
+        .catch(err => {
+            //console.error('[ERROR] Fallo AJAX horarios:', err);
+            document.getElementById('id_hora_cita_radios').innerHTML = `<div class='premium-form-error'>Error al cargar horarios.</div>`;
+            hiddenHoraInput.value = '';
+        });
+}
+
+// Inicializa y escucha cambios en la fecha
+window.addEventListener('DOMContentLoaded', function() {
+    const fechaInput = document.getElementById('id_fecha');
+    if (fechaInput) {
+        fechaInput.addEventListener('change', function() {
+            fetchHorariosDisponibles();
+        });
+        // Si ya hay fecha seleccionada, carga horarios
+        if (fechaInput.value) fetchHorariosDisponibles();
+    }
+});
+// --- MODAL PACIENTE (FRAGMENTO) ---
+// 1. Crear modal HTML (si no existe)
+if (!document.getElementById('modal-paciente-bg')) {
+    const modalBg = document.createElement('div');
+    modalBg.id = 'modal-paciente-bg';
+    modalBg.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(30,30,60,0.35);z-index:10000;display:none;align-items:center;justify-content:center;';
+    modalBg.innerHTML = `<div id='modal-paciente-content' style='max-width:600px;width:98vw;'></div>`;
+    document.body.appendChild(modalBg);
+}
+
+// 2. Función para abrir el modal y cargar el fragmento AJAX
+window.abrirModalPaciente = function() {
+    const modalBg = document.getElementById('modal-paciente-bg');
+    const modalContent = document.getElementById('modal-paciente-content');
+    modalContent.innerHTML = '<div class="flex justify-center items-center min-h-[200px] text-gray-400"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
+    modalBg.style.display = 'flex';
+    fetch('/core/pacientes/nuevo/ajax/?ajax=1', {headers: {'X-Requested-With':'XMLHttpRequest'}})
+        .then(r => r.text())
+        .then(html => {
+            modalContent.innerHTML = html;
+            window.initPacienteModalAjax(); // <-- Inicializa AJAX cada vez que se carga el fragmento
+        })
+        .catch((err) => {
+            console.error('[PACIENTE] Error al cargar el fragmento:', err);
+            modalContent.innerHTML = '<div class="p-8 text-center text-danger">Error al cargar el formulario.</div>';
+        });
+    modalBg.onclick = function(e) { if (e.target === modalBg) cerrarModalPaciente(); };
+    window.cerrarModalPacienteFn = cerrarModalPaciente;
+};
+function cerrarModalPaciente() {
+    document.getElementById('modal-paciente-bg').style.display = 'none';
+}
+// 3. Integrar con el botón de crear paciente
+const btnCrearPaciente = document.getElementById('crear-paciente-btn');
+if (btnCrearPaciente) {
+    btnCrearPaciente.onclick = function(e) {
+        e.preventDefault();
+        window.abrirModalPaciente();
+    };
+}
+// 4. Callback para cuando se cree un paciente exitosamente
+window.onPacienteCreado = function(data) {
+    // data.paciente debe tener: id, nombres, apellidos
+    const pacienteInput = document.getElementById('paciente-autocomplete');
+    const pacienteHidden = document.getElementById('id_paciente');
+    if (pacienteInput && pacienteHidden && data.paciente) {
+        pacienteInput.value = (data.paciente.nombres || '') + ' ' + (data.paciente.apellidos || '');
+        pacienteHidden.value = data.paciente.id;
+    }
+    if (window.toastr) toastr.success('Paciente creado y seleccionado');
+};
+// --- Inicializador global para el AJAX del modal paciente ---
+window.initPacienteModalAjax = function() {
+    const formPaciente = document.getElementById('form-paciente-basico');
+    if (!formPaciente) return;
+    formPaciente.onsubmit = function(e) {
+        e.preventDefault();
+        const formData = new FormData(formPaciente);
+        fetch(formPaciente.action, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        })
+        .then(r => r.json())
+        .then(function(data) {
+            if (data.success) {
+                if (window.onPacienteCreado) window.onPacienteCreado(data);
+                cerrarModalPaciente();
+            } else if (data.html) {
+                // Reemplaza el fragmento y re-inicializa el AJAX
+                document.getElementById('modal-paciente-content').innerHTML = data.html;
+                window.initPacienteModalAjax();
+            } else {
+                alert('Error al guardar el paciente.');
+            }
+        })
+        .catch(function() {
+            alert('Error de red al guardar paciente.');
+        });
+        return false;
+    };
+};
+</script>
+<script>
+window.UNICO_DOCTOR_ID = {{ doctor_id|default:'null' }};
+</script>
+{% endblock %}

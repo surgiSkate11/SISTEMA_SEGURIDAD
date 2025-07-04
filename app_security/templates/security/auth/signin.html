@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{# Oculta sidebar y header completamente #}
+{% block sidebar %}{% endblock %}
+{% block header %}
+<style>#sidebarMenuBtn { display: none !important; }
+.header-content .sidebar-logo {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.7rem !important;
+  white-space: nowrap !important;
+}
+.header-content .sidebar-logo-text {
+  white-space: nowrap !important;
+  display: inline !important;
+}
+</style>
+{{ block.super }}
+{% endblock %}
+
+{# Inyecta los estilos premium del login en el bloque css #}
+{% block css %}
+<link rel="stylesheet" href="{% static 'loader.css' %}">
+<style>
+  html, body {
+    min-height: 100vh !important;
+    height: 100vh !important;
+    background: linear-gradient(135deg, #e0e7ff 0%, #f9fafb 100%) !important;
+    overflow: hidden !important;
+  }
+  .neuromed-login-section {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100vw;
+    padding: 0 0 1.7rem 0;
+    position: relative;
+    z-index: 1;
+  }
+  .neural-bg-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 98vh;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.13;
+  }
+  .login-glass {
+    max-width: 500px;
+    margin: 1.8rem auto 0 auto;
+    padding: 0.8rem 2rem 1rem 2rem;
+    border-radius: 2.2rem;
+    background: rgba(255,255,255,0.22);
+    box-shadow: 0 8px 32px 0 #6366f1aa, 0 2px 16px #22d3ee33;
+    border: 2.5px solid rgba(99,102,241,0.13);
+    position: relative;
+    z-index: 2;
+    backdrop-filter: blur(18px) saturate(1.3);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    animation: fadeInUp 1.1s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: none; }
+  }
+  .login-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    margin-bottom: 0.3rem;
+  }
+  .banner-icon {
+    font-size: 2rem;
+    color: #fff;
+    background: linear-gradient(135deg, #a5b4fc 40%, #38bdf8 100%);
+    border-radius: 1.2rem;
+    box-shadow: 0 2px 12px #6366f1aa, 0 0 0 4px #fff8;
+    padding: 0.35rem 0.7rem;
+    margin-bottom: 0.05rem;
+    animation: float 2.5s infinite ease-in-out;
+    border: 2.5px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .banner-icon i {
+    color: #6366f1;
+    background: linear-gradient(135deg, #6366f1 60%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 2rem;
+    filter: drop-shadow(0 2px 8px #6366f1aa);
+    text-shadow: 0 2px 8px #fff8;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .banner-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.13rem;
+    font-weight: 700;
+    color: #2563eb;
+    letter-spacing: 1.5px;
+  }
+  .banner-subtitle {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 500;
+    margin-bottom: 0.05rem;
+  }
+  .login-btn-pro {
+    min-width: 140px;
+    justify-content: center;
+    background: linear-gradient(90deg, #6366f1 60%, #22d3ee 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px #6366f1aa;
+    border: none;
+    font-size: 1.03rem;
+    margin-top: 0.4rem;
+    transition: background 0.18s, box-shadow 0.18s, transform 0.14s;
+    position: relative;
+    overflow: hidden;
+    padding: 0.5rem 1.1rem;
+    height: 2rem;
+    line-height: 1.1;
+  }
+  .login-btn-pro:hover, .login-btn-pro:focus {
+    background: linear-gradient(90deg, #22d3ee 10%, #6366f1 90%);
+    box-shadow: 0 8px 32px #22d3eeaa;
+    color: #fff;
+    transform: scale(1.04);
+  }
+  .login-btn-pro .login-icon-wrapper {
+    display: flex;
+    align-items: center;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+    filter: drop-shadow(0 2px 8px #6366f1aa);
+    transition: color 0.18s, filter 0.18s, transform 0.18s;
+  }
+  .login-btn-pro:hover .login-icon-wrapper {
+    color: #22d3ee;
+    filter: drop-shadow(0 0 12px #22d3eecc);
+    transform: scale(1.18) rotate(-8deg);
+  }
+  .form-error p {
+    color: #ef4444;
+    font-size: 0.92rem;
+    margin: 0.05rem 0 0.05rem 0.2rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  .neuromed-login-section {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100vw;
+    padding: 0 0 1.7rem 0;
+    position: relative;
+    z-index: 1;
+  }
+  .login-glass input[type="email"], .login-glass input[type="password"] {
+    background: rgba(255,255,255,0.13);
+    border: 1.5px solid rgba(99,102,241,0.13);
+    color: #222;
+    font-size: 0.97rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 16px;
+    margin-top: 0.05rem;
+    margin-bottom: 0.05rem;
+    box-shadow: 0 2px 8px #6366f111;
+    transition: border 0.18s, box-shadow 0.18s;
+    height: 1.7rem;
+    line-height: 1.1;
+  }
+  .login-glass input[type="email"]:focus, .login-glass input[type="password"]:focus {
+    border: 1.5px solid #6366f1;
+    box-shadow: 0 4px 16px #6366f1aa;
+    outline: none;
+    background: rgba(99,102,241,0.07);
+  }
+  label {
+    font-weight: 600;
+    color: #2563eb;
+    font-size: 0.98rem;
+    margin-bottom: 0.05rem;
+    display: block;
+    letter-spacing: 0.2px;
+  }
+  .no-underline-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.16s;
+  }
+  .no-underline-link:hover {
+    color: #22d3ee;
+    text-decoration: underline;
+  }
+  @media (max-width: 600px) {
+    .login-glass {
+      max-width: 98vw;
+      padding: 0.4rem 0.3rem 0.5rem 0.3rem;
+    }
+    .neuromed-login-section {
+      padding: 0.3rem 0;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Sección Principal -->
+<section class="neuromed-login-section">
+  <!-- Neural Network Background Canvas -->
+  <canvas id="neural-bg-canvas" class="neural-bg-canvas"></canvas>
+  <div class="login-glass relative z-10">
+    <!-- Banner Futurista NeuroMed -->
+    <div class="login-banner">
+      <div class="banner-icon animate-float">
+        <i class="fas fa-brain"></i>
+      </div>
+      <div class="banner-title text-center">AuraCare Login</div>
+      <div class="banner-subtitle text-center">Acceso Seguro al Sistema Médico</div>
+    </div>
+    <!-- Título y subtítulo -->
+    <h2 class="text-3xl font-extrabold text-center mb-2" style="font-family: 'Orbitron', monospace; background: linear-gradient(90deg,#6366f1,#22d3ee,#fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing:2px;">Bienvenido de nuevo</h2>
+    <p class="text-center text-sm mb-6" style="color:rgba(34,99,241,0.8); font-family:'Rajdhani',sans-serif;">Inicia sesión para acceder a tu cuenta</p>
+    <!-- Formulario -->
+    <form method="post" id="loginForm" class="space-y-5 flex flex-col items-center w-full" style="align-items:center;">
+      {% csrf_token %}
+      <!-- Campo Email -->
+      <div style="width:100%; max-width:320px; display:flex; flex-direction:column; align-items:center;">
+        <label for="email" style="align-self:flex-start;">Correo Electrónico</label>
+        <input type="email" name="username" id="email" required autofocus
+               placeholder="doctor@ejemplo.com" style="width:100%; max-width:320px;">
+      </div>
+      <!-- Campo Contraseña -->
+      <div style="width:100%; max-width:320px; display:flex; flex-direction:column; align-items:center;">
+        <label for="password" style="align-self:flex-start;">Contraseña</label>
+        <input type="password" name="password" id="password" required
+               placeholder="••••••••" style="width:100%; max-width:320px;">
+      </div>
+      <!-- Errores -->
+      {% if form.errors %}
+      <div class="form-error" style="width:100%; max-width:320px; text-align:center;">
+        {% for field in form %}
+          {% for error in field.errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <!-- Link Olvidaste tu contraseña -->
+      <div class="flex justify-center w-full" style="width:100%;">
+        <a href="#" class="no-underline-link text-center">¿Olvidaste tu contraseña?</a>
+      </div>
+      <!-- Botón Iniciar Sesión alineado al centro -->
+      <div class="flex justify-center w-full" style="width:100%;">
+        <button type="submit" id="loginButton" class="btn-neon login-btn-pro relative overflow-hidden px-8 py-3 rounded-xl font-bold flex items-center gap-2" style="margin:0 auto;">
+          <span class="login-icon-wrapper"><i class="fas fa-sign-in-alt login-svg-icon"></i></span>
+          Iniciar Sesión
+        </button>
+      </div>
+    </form>
+    <!-- Pie de formulario opcional -->
+    <p class="text-center text-xs mt-6" style="color:rgba(34,99,241,0.7);">¿No tienes cuenta?
+      <a href="#" class="no-underline-link">Regístrate</a>
+    </p>
+  </div>
+</section>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'loader.js' %}"></script>
+<script src="https://kit.fontawesome.com/2b8e1e1b7b.js" crossorigin="anonymous"></script>
+{% endblock %}

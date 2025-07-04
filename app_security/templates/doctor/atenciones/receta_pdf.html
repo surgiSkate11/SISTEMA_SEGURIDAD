@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{# Sidebar and group selection context are provided by SidebarMenuMixin in the view #}
+
+{% block title %}Receta Médica - Atención #{{ atencion.id }}{% endblock %}
+
+{% block content %}
+<div class="container receta-pdf premium-bg" style="padding: 2rem; max-width: 900px; margin: 0 auto; background: #fff; border-radius: 18px; box-shadow: 0 4px 32px rgba(0,0,0,0.10);">
+    <div class="row align-items-center mb-4">
+        <div class="col-2 text-center">
+            <img src="{% static 'img/iconos/receta_premium.png' %}" alt="Receta" style="width: 70px;">
+        </div>
+        <div class="col-8 text-center">
+            <h2 class="mb-0" style="font-weight: 700; color: #2a3b8f;">Receta Médica</h2>
+            <div style="font-size: 1.1rem; color: #888;">Atención #{{ atencion.id }} &bull; {{ fecha|date:'d/m/Y H:i' }}</div>
+        </div>
+        <div class="col-2 text-end">
+            <img src="{% static 'img/iconos/logo_clinica.png' %}" alt="Logo" style="width: 60px;">
+        </div>
+    </div>
+    <hr style="border-top: 2px solid #2a3b8f;">
+    <div class="row mb-3">
+        <div class="col-6">
+            <h5 class="mb-1" style="color: #2a3b8f;">Paciente</h5>
+            <div><strong>{{ paciente.nombres }} {{ paciente.apellidos }}</strong></div>
+            <div>Edad: {{ paciente.edad }} años</div>
+            <div>CI/DNI: {{ paciente.cedula_ecuatoriana|default:paciente.dni }}</div>
+            <div>Sexo: {{ paciente.get_sexo_display }}</div>
+            <div>Tipo de Sangre: {{ paciente.tipo_sangre }}</div>
+        </div>
+        <div class="col-6">
+            <h5 class="mb-1" style="color: #2a3b8f;">Doctor</h5>
+            <div><strong>Dr(a). {{ doctor.nombres }} {{ doctor.apellidos }}</strong></div>
+            <div>Especialidad: {{ doctor.especialidad }}</div>
+            <div>Registro: {{ doctor.registro_profesional }}</div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-12">
+            <h5 class="mb-1" style="color: #2a3b8f;">Motivo de Consulta</h5>
+            <div class="premium-box">{{ atencion.motivo_consulta }}</div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-12">
+            <h5 class="mb-1" style="color: #2a3b8f;">Diagnóstico(s)</h5>
+            <ul class="premium-list">
+                {% for diag in diagnosticos %}
+                    <li>{{ diag.descripcion }}</li>
+                {% empty %}
+                    <li>No hay diagnósticos registrados.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-12">
+            <h5 class="mb-1" style="color: #2a3b8f;">Prescripción Médica</h5>
+            <table class="table table-bordered premium-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>Medicamento</th>
+                        <th>Presentación</th>
+                        <th>Cantidad</th>
+                        <th>Duración</th>
+                        <th>Frecuencia</th>
+                        <th>Prescripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for detalle in detalles %}
+                    <tr>
+                        <td>{{ detalle.medicamento.nombre }}</td>
+                        <td>{{ detalle.medicamento.concentracion }} {{ detalle.medicamento.via_administracion }}</td>
+                        <td>{{ detalle.cantidad }}</td>
+                        <td>{{ detalle.duracion_tratamiento }} días</td>
+                        <td>{{ detalle.frecuencia_diaria }} x día</td>
+                        <td>{{ detalle.prescripcion }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6">No hay medicamentos prescritos.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-12">
+            <h5 class="mb-1" style="color: #2a3b8f;">Tratamiento y Observaciones</h5>
+            <div class="premium-box">{{ atencion.tratamiento|default:'-' }}</div>
+            {% if atencion.comentario_adicional %}
+                <div class="premium-box mt-2">{{ atencion.comentario_adicional }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row mt-5">
+        <div class="col-6 text-center">
+            <div style="border-top: 1px solid #2a3b8f; width: 80%; margin: 0 auto;"></div>
+            <div style="color: #2a3b8f; font-weight: 600;">Firma y Sello</div>
+        </div>
+        <div class="col-6 text-end" style="color: #888; font-size: 0.95rem;">
+            <div>Generado por el sistema el {{ fecha|date:'d/m/Y H:i' }}</div>
+        </div>
+    </div>
+</div>
+
+<style>
+.premium-bg { background: #f7f9fc; }
+.premium-box {
+    background: #f0f4ff;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #e0e7ff;
+    font-size: 1.08rem;
+}
+.premium-list {
+    padding-left: 1.2rem;
+    font-size: 1.08rem;
+}
+.premium-table th, .premium-table td {
+    font-size: 1.05rem;
+    vertical-align: middle;
+}
+@media print {
+    body, html { background: #fff !important; }
+    .sidebar, .navbar, .btn, .no-print { display: none !important; }
+    .container.receta-pdf { box-shadow: none !important; border: none !important; }
+}
+</style>
+{% endblock %}

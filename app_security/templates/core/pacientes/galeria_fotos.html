@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="max-w-4xl mx-auto mt-8">
+    <h2 class="text-2xl font-bold mb-4">Galería de Fotos de {{ paciente.nombre_completo }}</h2>
+    <form method="post" enctype="multipart/form-data" class="mb-6 bg-white p-4 rounded shadow">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+                <label class="block font-semibold mb-1">Archivo (imagen o PDF):</label>
+                {{ form.imagen }}
+                {% for error in form.imagen.errors %}
+                    <div class="text-red-600 text-sm">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="flex-1">
+                <label class="block font-semibold mb-1">Descripción:</label>
+                {{ form.descripcion }}
+                {% for error in form.descripcion.errors %}
+                    <div class="text-red-600 text-sm">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Subir</button>
+            </div>
+        </div>
+    </form>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {% for foto in fotos %}
+        <div class="bg-white rounded shadow p-2 flex flex-col items-center">
+            {% if foto.imagen.url|lower|endswith:'.pdf' %}
+                <a href="{{ foto.imagen.url }}" target="_blank" class="block w-full text-center">
+                    <img src="{% static 'img/pdf1.svg' %}" onerror="this.onerror=null;this.src='{% static 'img/pdf2.png' %}';" alt="PDF" class="h-32 mx-auto mb-2">
+                    <span class="text-blue-700 underline">Ver PDF</span>
+                </a>
+            {% else %}
+                <a href="{{ foto.imagen.url }}" target="_blank">
+                    <img src="{{ foto.imagen.url }}" alt="Foto" class="h-32 object-contain rounded mb-2">
+                </a>
+            {% endif %}
+            <div class="text-sm text-gray-700 mb-1">{{ foto.descripcion|default:'Sin descripción' }}</div>
+            <div class="text-xs text-gray-500 mb-2">{{ foto.fecha_subida|date:'d/m/Y H:i' }}</div>
+            <form method="post" action="{% url 'core:eliminar_foto' paciente.id foto.id %}" onsubmit="return confirm('¿Eliminar esta foto?');">
+                {% csrf_token %}
+                <button type="submit" class="text-red-600 hover:underline text-xs">Eliminar</button>
+            </form>
+        </div>
+        {% empty %}
+        <div class="col-span-4 text-center text-gray-500">No hay fotos subidas.</div>
+        {% endfor %}
+    </div>
+    {% if is_paginated %}
+    <div class="mt-6 flex justify-center">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 border rounded-l">Anterior</a>
+        {% endif %}
+        <span class="px-4 py-1 border-t border-b">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 border rounded-r">Siguiente</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    <div class="mt-8">
+        <a href="{% url 'core:paciente_list' %}" class="text-blue-600 hover:underline">&larr; Volver a la lista de pacientes</a>
+    </div>
+</div>
+{% endblock %}

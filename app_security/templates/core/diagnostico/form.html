@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+{% include 'fragments/messages.html' %}
+{% include 'fragments/form_errors.html' %}
+<style>
+:root {
+    --primary-blue: #2563eb;
+    --aurora1: #6366f1;
+    --aurora2: #22d3ee;
+    --aurora3: #fbbf24;
+    --btn-login: #4f8cff;
+    --btn-login-hover: #6f4fff;
+    --gold-premium: #ffd700;
+    --gold-light: #ffe066;
+    --gold-bg: #fffbe7;
+    --gold-hover: #fff7b2;
+    --gold-soft: #e6c97a;
+    --text-dark: #111827;
+    --text-secondary: #64748b;
+    --text-sidebar: #374151;
+    --bg-body: #f9fafb;
+    --bg-secondary: #e0e7ff;
+    --text-shadow: #c7d2fe44;
+    --danger: #ef4444;
+}
+.premium-form-card {
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(24px);
+    border: 2.5px solid var(--gold-premium);
+    box-shadow: 0 24px 48px -12px var(--aurora1), 0 0 0 4px var(--gold-light);
+    border-radius: 2.5rem;
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
+    max-width: 38rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInCard 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes fadeInCard {
+    0% { opacity: 0; transform: translateY(40px) scale(0.98); }
+    100% { opacity: 1; transform: none; }
+}
+.premium-form-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, var(--aurora1) 0%, var(--aurora2) 100%);
+    opacity: 0.08;
+    z-index: 0;
+    pointer-events: none;
+}
+.premium-form-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    background: linear-gradient(90deg, var(--gold-premium), var(--aurora2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.premium-form-icon {
+    color: var(--gold-premium);
+    font-size: 2.5rem;
+    margin-right: 0.5rem;
+}
+@media (max-width: 600px) {
+    .premium-form-card {
+        padding: 1.2rem 0.5rem 1.5rem 0.5rem;
+        border-radius: 1.2rem;
+    }
+    .premium-form-title {
+        font-size: 1.5rem;
+    }
+}
+</style>
+<div class="flex justify-center items-center min-h-[60vh]">
+    <div class="premium-form-card w-full">
+        <div class="premium-form-title">
+            <span class="premium-form-icon">
+                <img src="{% static 'img/iconos/diagnostico.svg' %}" alt="Diagnóstico" style="height:2.5rem;width:2.5rem;">
+            </span>
+            {{ view.object.pk|yesno:'Editar,Registrar' }} Diagnóstico
+        </div>
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block font-semibold">{{ field.label }}{% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                    {% if field.name == "datos_adicionales" %}
+                        <div class="flex items-center gap-2">
+                            {{ field|safe }}
+                            <button type="button" class="mic-btn" onclick="startDictation('{{ field.id_for_label }}')" title="Dictar por voz" style="margin-left:5px;vertical-align:middle;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.92V21h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-2.08A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 0 0 10 0z"/>
+                                </svg>
+                            </button>
+                            {% if field.help_text %}
+                                <small class="text-gray-500">{{ field.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        {{ field }}
+                        {% if field.help_text %}
+                            <small class="text-gray-500">{{ field.help_text }}</small>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <div class="flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{% url 'core:diagnostico_list' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

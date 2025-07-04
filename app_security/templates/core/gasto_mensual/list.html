@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Gastos Mensuales{% endblock %}
+{% block content %}
+{% include 'fragments/messages.html' %}
+{% include 'fragments/form_errors.html' %}
+<link rel="stylesheet" href="{% static 'forms/premium.css' %}">
+
+<!-- Premium Header with Aurora Background -->
+<div class="premium-gradient relative overflow-hidden rounded-b-3xl shadow-lg mb-3">
+    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-y-12"></div>
+    <div class="max-w-6xl mx-auto px-6 py-6 relative z-10">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-white text-center md:text-left">
+                <h1 class="text-5xl font-bold mb-4 neon-glow tracking-tight">
+                    Gastos Mensuales 
+                    <span class="inline-block floating-animation">
+                        <i class="fas fa-crown text-[var(--gold-premium)]"></i>
+                    </span>
+                </h1>
+                <p class="text-white/90 text-xl">Panel de control premium para gestión financiera</p>
+            </div>
+            <div class="flex items-center space-x-8">
+                <div class="text-right text-white bg-white/10 rounded-2xl p-6 backdrop-blur-lg">
+                    <p class="text-sm opacity-90 mb-2">Total del mes</p>
+                    <p class="text-4xl font-bold neon-glow" id="total-gastos-header">${{ total_gastos|floatformat:2|default:"0.00" }}</p>
+                </div>
+                 
+                    </span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Dashboard Content -->
+<div class="max-w-6xl mx-auto px-6 py-6 -mt-1 relative z-20">
+    <!-- Premium Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-16">
+        <!-- Total Gastos Card -->
+        <div class="premium-stats rounded-3xl group">
+            <div class="flex items-center justify-between mb-6">
+                <div class="premium-icon-container" style="background: linear-gradient(135deg, #fffbe7 60%, #ffe066 100%); border: 2px solid var(--gold-premium);">
+                    <i class="fas fa-chart-pie" style="color: #bfa94a; filter: drop-shadow(0 2px 6px #ffe066);"></i>
+                </div>
+                <div class="premium-badge" style="background: linear-gradient(90deg, #fffbe7 60%, #e0e7ff 100%); color: #bfa94a; border: 1.5px solid #ffe066;">
+                    <i class="fas fa-arrow-trend-up mr-2" style="color: #bfa94a;"></i>12%
+                </div>
+            </div>
+            <p class="text-[var(--text-secondary)] font-medium mb-3">Total Gastos</p>
+            <p class="text-4xl font-bold text-[var(--text-dark)] mb-2">{{ gastos|length }}</p>
+            <p class="text-sm text-[var(--text-secondary)] flex items-center">
+                <i class="fas fa-calendar-check mr-2" style="color: #bfa94a;"></i>
+                registrados este mes
+            </p>
+        </div>
+
+        <!-- Promedio Card -->
+        <div class="premium-stats rounded-3xl group">
+            <div class="flex items-center justify-between mb-6">
+                <div class="premium-icon-container" style="background: linear-gradient(135deg, #fffbe7 60%, #ffe066 100%); border: 2px solid #ffe066;">
+                    <i class="fas fa-chart-column" style="color: #e6c97a; filter: drop-shadow(0 2px 6px #ffe066);"></i>
+                </div>
+                <div class="premium-badge" style="background: linear-gradient(90deg, #fffbe7 60%, #e0e7ff 100%); color: #bfa94a; border: 1.5px solid #ffe066;">
+                    <i class="fas fa-arrow-trend-down mr-2" style="color: #bfa94a;"></i>5%
+                </div>
+            </div>
+            <p class="text-[var(--text-secondary)] font-medium mb-3">Promedio Diario</p>
+            <p class="text-4xl font-bold text-[var(--text-dark)] mb-2">${{ promedio_diario|floatformat:2|default:"0.00" }}</p>
+            <p class="text-sm text-[var(--text-secondary)] flex items-center">
+                <i class="fas fa-clock mr-2" style="color: #bfa94a;"></i>
+                por día este mes
+            </p>
+        </div>
+
+        <!-- Mayor Gasto Card -->
+        <div class="premium-stats rounded-3xl group">
+            <div class="flex items-center justify-between mb-6">
+                <div class="premium-icon-container" style="background: linear-gradient(135deg, #e0e7ff 60%, #fffbe7 100%); border: 2px solid #e0e7ff;">
+                    <i class="fas fa-arrow-up-right-dots" style="color: #64748b; filter: drop-shadow(0 2px 6px #ffe066);"></i>
+                </div>
+                <span class="premium-badge" style="background: linear-gradient(90deg, #fffbe7 60%, #e0e7ff 100%); color: #64748b; border: 1.5px solid #e0e7ff;">
+                    <i class="fas fa-flag mr-2" style="color: #64748b;"></i>
+                    {{ mayor_gasto.tipo_gasto|default:"Sin datos" }}
+                </span>
+            </div>
+            <p class="text-[var(--text-secondary)] font-medium mb-3">Mayor Gasto</p>
+            <p class="text-4xl font-bold text-[var(--text-dark)] mb-2">${{ mayor_gasto.valor|floatformat:2|default:"0.00" }}</p>
+            <p class="text-sm text-[var(--text-secondary)] flex items-center">
+                <i class="fas fa-receipt mr-2" style="color: #bfa94a;"></i>
+                {{ mayor_gasto.observacion|default:"Sin observaciones" }}
+            </p>
+        </div>
+
+        <!-- Categorías Card -->
+        <div class="premium-stats rounded-3xl group">
+            <div class="flex items-center justify-between mb-6">
+                <div class="premium-icon-container floating-animation" style="background: linear-gradient(135deg, #e0e7ff 60%, #fffbe7 100%); border: 2px solid #e0e7ff;">
+                    <i class="fas fa-layer-group" style="color: #64748b; filter: drop-shadow(0 2px 6px #e0e7ff);"></i>
+                </div>
+                <span class="premium-badge" style="background: linear-gradient(90deg, #e0e7ff 60%, #fffbe7 100%); color: #22d3ee; border: 1.5px solid #e0e7ff;">
+                    <i class="fas fa-check-circle mr-2" style="color: #22d3ee;"></i>
+                    Activas
+                </span>
+            </div>
+            <p class="text-[var(--text-secondary)] font-medium mb-3">Categorías</p>
+            <p class="text-4xl font-bold text-[var(--text-dark)] mb-2">{{ categorias_activas|default:"0" }}</p>
+            <p class="text-sm text-[var(--text-secondary)] flex items-center">
+                <i class="fas fa-tag mr-2" style="color: #22d3ee;"></i>
+                diferentes tipos
+            </p>
+        </div>
+    </div>
+
+    <!-- Premium Search Section -->
+    <div class="premium-card rounded-2xl p-6 mb-8 bg-gradient-to-r from-white to-slate-50/80">
+        <form method="get" class="w-full" id="filtros-form" action="#tabla-gastos-body">
+            <div class="w-full flex flex-col lg:flex-row lg:items-center lg:justify-between lg:flex-nowrap gap-4 flex-wrap">
+                <!-- Input de búsqueda en su propio div -->
+                <div class="w-full lg:w-auto flex items-center gap-2">
+                    <span class="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-[var(--aurora1)] to-[var(--aurora2)] shadow-lg ml-2">
+                        <i class="fas fa-search text-[var(--gold-premium)] text-xl"></i>
+                    </span>
+                    <input 
+                        type="text" 
+                        name="search"
+                        value="{{ request.GET.search }}"
+                        placeholder="Buscar por tipo de gasto o observación..."
+                        class="w-full lg:w-auto lg:max-w-md pl-4 pr-12 h-12 bg-white/90 border-2 border-slate-200 rounded-xl text-base font-normal text-slate-700 focus:border-[var(--aurora1)] focus:ring-2 focus:ring-[var(--aurora2)]/20 transition-all duration-300 outline-none shadow-md hover:shadow-lg placeholder:text-slate-400 placeholder:font-normal backdrop-blur-sm relative z-10 premium-search-input"
+                    >
+                </div>
+                <!-- Selects premium de año y mes -->
+                <div class="flex gap-4 flex-wrap w-full lg:w-auto justify-end">
+                    <!-- Año -->
+                    <div class="relative flex items-center">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--aurora1)] pointer-events-none flex items-center h-full" style="left: 1rem; top: 50%; transform: translateY(-50%);">
+                            <i class="fas fa-calendar-alt"></i>
+                        </span>
+                        <select name="year" id="year-select" class="premium-select border-2 border-[var(--gold-premium)] rounded-xl shadow-md pl-10 pr-4 h-12 text-base font-semibold text-slate-700 focus:ring-2 focus:ring-[var(--aurora1)]/30 transition-all duration-300 outline-none bg-white/90 min-w-[120px] appearance-none">
+                            <option value="">Año</option>
+                            {% for y in available_years %}
+                                <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Mes -->
+                    <div class="relative flex items-center">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--aurora2)] pointer-events-none flex items-center h-full" style="left: 1rem; top: 50%; transform: translateY(-50%);">
+                            <i class="fas fa-calendar"></i>
+                        </span>
+                        <select name="month" id="month-select" class="premium-select border-2 border-[var(--gold-premium)] rounded-xl shadow-md pl-10 pr-4 h-12 text-base font-semibold text-slate-700 focus:ring-2 focus:ring-[var(--aurora2)]/30 transition-all duration-300 outline-none bg-white/90 min-w-[140px] appearance-none">
+                            <option value="">Mes</option>
+                            {% for num, nombre in meses %}
+                                <option value="{{ num }}" {% if num == selected_month %}selected{% endif %}>{{ nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Premium Table Section -->
+    <div class="premium-card rounded-3xl overflow-hidden">
+        <div class="px-8 py-8 border-b-2 border-[var(--gold-premium)] gold-gradient">
+            <h3 class="text-2xl font-bold mb-4 flex items-center gap-4" style="margin-left: 1.5rem; color: var(--aurora1);">
+                <i class="fas fa-table-list" style="color: var(--aurora1); filter: drop-shadow(0 2px 6px var(--aurora2)); margin-right: 0.5rem;"></i>
+                Lista de Gastos 
+            </h3>
+            <p class="text-white/90 flex items-center gap-2 mb-2" style="margin-left: 1.5rem;">
+                <i class="fas fa-info-circle"></i>
+                Gestiona todos tus gastos mensuales aquí
+            </p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr>
+                        <th class="premium-table-header w-1/3 text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <i class="fas fa-file-invoice-dollar text-[var(--aurora1)]"></i>
+                                <span>Tipo de Gasto</span>
+                            </div>
+                        </th>
+                        <th class="premium-table-header w-1/6 text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <i class="fas fa-money-bill-wave text-[var(--aurora2)]"></i>
+                                <span>Valor</span>
+                            </div>
+                        </th>
+                        <th class="premium-table-header w-1/4 text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <i class="fas fa-comment-dots text-[var(--aurora3]">
+                                </i>
+                                <span>Observación</span>
+                            </div>
+                        </th>
+                        <th class="premium-table-header w-1/6 text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <i class="fas fa-calendar-day text-[var(--gold-premium)]"></i>
+                                <span>Fecha</span>
+                            </div>
+                        </th>
+                        <th class="premium-table-header w-1/6 text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <i class="fas fa-wand-magic-sparkles text-[var(--aurora1)]"></i>
+                                <span>Acciones</span>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-gastos-body" class="divide-y divide-[var(--bg-secondary)]">
+                    {% include 'core/gasto_mensual/_tabla_gastos.html' %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="p-0">
+                            <a href="{% url 'core:gasto_mensual_create' %}"
+                               class="block w-full text-center py-4 premium-gradient text-white font-bold text-lg rounded-b-3xl hover:from-[var(--aurora2)] hover:to-[var(--aurora1)] transition-all duration-300 flex items-center justify-center gap-3">
+                                <span class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20">
+                                    <i class="fas fa-plus text-2xl text-[var(--gold-premium)]"></i>
+                                </span>
+                                <span>Agregar nuevo gasto</span>
+                            </a>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% include 'fragments/delete.html' %}
+
+    <!-- Premium Pagination -->
+    {% if is_paginated %}
+        {% include 'fragments/paginator.html' %}
+    {% endif %}
+</div>
+{% include 'fragments/search_table_ajax.html' %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit selects año y mes con scroll suave a la tabla sin recargar toda la página
+    const yearSelect = document.getElementById('year-select');
+    const monthSelect = document.getElementById('month-select');
+    const filtrosForm = document.getElementById('filtros-form');
+    const tablaGastos = document.getElementById('tabla-gastos-body');
+    function scrollToTabla() {
+        if (tablaGastos) {
+            tablaGastos.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+    if (yearSelect && monthSelect) {
+        yearSelect.addEventListener('change', function() {
+            filtrosForm.submit();
+            setTimeout(scrollToTabla, 100);
+        });
+        monthSelect.addEventListener('change', function() {
+            filtrosForm.submit();
+            setTimeout(scrollToTabla, 100);
+        });
+    }
+    // Mantener búsqueda con debounce si se usa AJAX (opcional, si backend soporta ajax para filtros)
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        let lastValue = searchInput.value;
+        let timeout = null;
+        searchInput.addEventListener('input', function() {
+            const value = this.value;
+            if (timeout) clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                if (value === lastValue) return;
+                lastValue = value;
+                filtrosForm.submit();
+                setTimeout(scrollToTabla, 100);
+            }, 400);
+        });
+    }
+    // Scroll suave al hacer clic en paginación
+    document.querySelectorAll('a[href*="#tabla-gastos-body"]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            setTimeout(scrollToTabla, 200);
+        });
+    });
+});
+
+function openDeleteModal(id, name) {
+    const deleteForm = document.getElementById('deleteForm');
+    deleteForm.action = `{% url 'core:gasto_mensual_delete' 0 %}`.replace('0', id);
+    document.getElementById('Description').textContent = `ID: ${id} - ${name}`;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteForm = document.getElementById('deleteForm');
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', function(e) {
+            const submitBtn = deleteForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Eliminando...';
+                submitBtn.disabled = true;
+            }
+        });
+    }
+});
+</script>
+{% if doctor %}
+    <div class="mb-4">
+        <div class="text-lg font-semibold text-blue-800">Gastos del Dr. {{ doctor.nombre }}</div>
+        <div class="text-sm text-gray-500">Usuario: {{ doctor.user.email }}</div>
+    </div>
+{% endif %}
+{% endblock %}
+

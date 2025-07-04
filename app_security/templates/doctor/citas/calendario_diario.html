@@ -1,0 +1,741 @@
+{% extends "doctor/citas/calendario.html" %}
+{% load static %}
+{% block calendario_content %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Premium - Vista Diaria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --rojo-ocupado: #ef4444;
+            --verde-atendido: #10b981;
+            --amarillo-disponible: #facc15;
+            --bg-ocupado: rgba(239, 68, 68, 0.1);
+            --bg-atendido: rgba(16, 185, 129, 0.1);
+            --bg-disponible: rgba(250, 204, 21, 0.1);
+        }
+        body, .premium-calendar-content {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        /* Horarios disponibles (futuros, sin cita) */
+        .slot-disponible-futuro {
+            background: linear-gradient(135deg, #fff700 0%, #ffe066 60%, #ffd600 100%);
+            border-left: 5px solid #ffe066;
+            color: #7c4700;
+            font-weight: 700;
+            box-shadow: 0 3px 16px 0 rgba(255, 247, 0, 0.18);
+            cursor: pointer;
+            filter: saturate(1.10) brightness(1.08);
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .slot-disponible-futuro:hover {
+            background: linear-gradient(135deg, #fff700 0%, #fff9c4 100%);
+            box-shadow: 0 8px 32px 0 rgba(255, 247, 0, 0.28);
+        }
+        /* Horarios disponibles pasados (no clickeables) */
+        .slot-disponible {
+            background: none;
+            border-left: 4px solid #facc15;
+            color: #a16207;
+            font-weight: 600;
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .slot-ocupado {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+            border-left: 4px solid var(--rojo-ocupado);
+            /* No cursor aquí, el cursor se define en el div según el estado */
+        }
+        .slot-atendido {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+            border-left: 4px solid var(--verde-atendido);
+            cursor: pointer;
+        }
+        .slot-disponible:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(250, 204, 21, 0.2);
+            background: linear-gradient(135deg, rgba(250, 204, 21, 0.15) 0%, rgba(250, 204, 21, 0.1) 100%);
+        }
+        .slot-atendido:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%);
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .status-disponible {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            border: 1px solid #fbbf24;
+        }
+        .status-ocupado {
+            background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+            color: #991b1b;
+            border: 1px solid #f87171;
+        }
+        .status-atendido {
+            background: linear-gradient(135deg, #bbf7d0 0%, #a7f3d0 100%);
+            color: #047857;
+            border: 1px solid #34d399;
+        }
+        .timeline-marker {
+            width: 3px;
+            background: linear-gradient(to bottom, #e5e7eb 0%, #d1d5db 100%);
+            position: relative;
+        }
+        .timeline-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #6b7280;
+            position: absolute;
+            left: -3.5px;
+            top: 1rem;
+        }
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 8px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .slot-card {
+            transition: all 0.3s ease;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+        .slot-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, currentColor 50%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .slot-card:hover::before {
+            opacity: 1;
+        }
+        .time-column {
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .appointment-grid {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr 1fr;
+            gap: 1rem;
+            align-items: start;
+        }
+        @media (max-width: 1279px) {
+            .appointment-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+        }
+        .patient-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .floating-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .floating-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+        }
+        .slot-card:hover .floating-tooltip {
+            opacity: 1;
+        }
+        .premium-container {
+          border: 2px solid transparent !important;
+          box-shadow: 
+            0 25px 50px -12px rgba(79, 70, 229, 0.25),
+            0 20px 40px -8px rgba(139, 92, 246, 0.15),
+            0 10px 20px -4px rgba(236, 72, 153, 0.10),
+            0 4px 8px -2px rgba(251, 113, 133, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+          border-radius: 2.5rem !important;
+        }
+        .modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(30, 27, 75, 0.45);
+          z-index: 10000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: opacity 0.2s;
+          opacity: 1;
+        }
+        .modal-overlay.hidden {
+          display: none !important;
+          opacity: 0;
+        }
+        .modal-overlay.show {
+          display: flex !important;
+          opacity: 1;
+        }
+        .modal-content {
+          background: #fff;
+          border-radius: 1.5rem;
+          box-shadow: 0 8px 40px 0 rgba(30,27,75,0.18);
+          padding: 0;
+          position: relative;
+          min-width: 340px;
+          max-width: 480px;
+          width: 100%;
+          outline: none;
+          /* Fondo temporal para depuración */
+          background-color: #fffbe7 !important;
+        }
+        .modal-close {
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          cursor: pointer;
+          z-index: 10;
+          color: #888;
+          background: #f3f4f6;
+          border-radius: 50%;
+          width: 2.5rem;
+          height: 2.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.2s;
+        }
+        .modal-close:hover {
+          background: #e0e7ef;
+          color: #222;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 premium-calendar-content" style="border-radius:2.5rem;">
+<div class="min-h-screen p-4 lg:p-8 rounded-[2.5rem]" style="border-radius:2.5rem;">
+  <!-- Header Premium -->
+  <div class="mb-8">
+    <div class="glass-effect rounded-[2.5rem] p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6" style="border-radius:2.5rem;">
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+          <i class="fas fa-calendar-alt text-white text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold text-white mb-1">Agenda Premium</h1>
+          <p class="text-white/80 font-medium">{{ fecha_actual|date:'l, j \d\e F \d\e Y' }}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="btn-anterior" class="px-6 py-3 bg-white/20 text-white rounded-2xl hover:bg-white/30 transition-all duration-200 flex items-center gap-2">
+          <i class="fas fa-chevron-left"></i>
+          Anterior
+        </button>
+        <button id="btn-hoy" class="px-6 py-3 bg-white/20 text-white rounded-2xl hover:bg-white/30 transition-all duration-200">Hoy</button>
+        <button id="btn-siguiente" class="px-6 py-3 bg-white/20 text-white rounded-2xl hover:bg-white/30 transition-all duration-200 flex items-center gap-2">
+          Siguiente
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- Layout Principal -->
+  <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+    <!-- Sidebar -->
+    <aside class="xl:col-span-1 space-y-8">
+      <!-- Estadísticas en Tiempo Real -->
+      <div class="glass-effect rounded-[2.5rem] p-6" style="border-radius:2.5rem;">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-white">Estado del Día</h3>
+          <div class="w-3 h-3 bg-green-400 rounded-full pulse-dot"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <div class="text-center">
+            <div class="text-3xl font-bold text-white mb-1">{{ resumen.total_citas }}</div>
+            <div class="text-white/70 text-sm">Total Citas</div>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl font-bold text-green-400 mb-1">{{ resumen.consultas }}</div>
+            <div class="text-white/70 text-sm">Atendidas</div>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between p-3 rounded-2xl bg-white/10">
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+              <span class="text-white text-sm">Disponible</span>
+            </div>
+            <span class="text-white font-semibold">{{ resumen.disponible }}</span>
+          </div>
+          <div class="flex items-center justify-between p-3 rounded-2xl bg-white/10">
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 bg-red-400 rounded-full"></div>
+              <span class="text-white text-sm">Ocupado</span>
+            </div>
+            <span class="text-white font-semibold">{{ resumen.ocupadas|default:0 }}</span>
+          </div>
+          <div class="flex items-center justify-between p-3 rounded-2xl bg-white/10">
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+              <span class="text-white text-sm">Atendido</span>
+            </div>
+            <span class="text-white font-semibold">{{ resumen.consultas }}</span>
+          </div>
+        </div>
+      </div>
+      <!-- Acciones Rápidas -->
+      <div class="glass-effect rounded-[2.5rem] p-6" style="border-radius:2.5rem;">
+        <h3 class="text-xl font-semibold text-white mb-6">Acciones Rápidas</h3>
+        <div class="space-y-3">
+          {% if permissions.add_cita %}
+          <a href="{% url 'doctor:cita_create' %}?fecha={{ fecha_actual }}" class="w-full p-4 text-left bg-white/10 hover:bg-white/20 rounded-2xl transition-all duration-200 flex items-center gap-3 text-white">
+            <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+              <i class="fas fa-plus"></i>
+            </div>
+            <span class="font-medium">Nueva Cita</span>
+          </a>
+          {% endif %}
+          <button class="w-full p-4 text-left bg-white/10 hover:bg-white/20 rounded-2xl transition-all duration-200 flex items-center gap-3 text-white">
+            <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+              <i class="fas fa-file-export"></i>
+            </div>
+            <span class="font-medium">Exportar Agenda</span>
+          </button>
+          <button class="w-full p-4 text-left bg-white/10 hover:bg-white/20 rounded-2xl transition-all duration-200 flex items-center gap-3 text-white">
+            <div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
+              <i class="fas fa-cog"></i>
+            </div>
+            <span class="font-medium">Configuración</span>
+          </button>
+        </div>
+      </div>
+      <!-- Mini Calendario -->
+      <div class="glass-effect rounded-[2.5rem] p-6" style="border-radius:2.5rem;">
+        <h3 class="text-xl font-semibold text-white mb-4">Navegación Rápida</h3>
+        <div class="grid grid-cols-7 gap-1 text-center text-white/70 text-xs mb-2">
+          <div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
+        </div>
+        <!-- Aquí podrías renderizar un mini calendario dinámico -->
+        <div class="grid grid-cols-7 gap-1 text-center text-sm">
+          {% for d in "1234567" %}
+            <div class="p-2 text-white/50">{{ forloop.counter }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    </aside>
+    <!-- Calendario Principal -->
+    <main class="xl:col-span-3">
+      <div class="rounded-[2.5rem] overflow-hidden shadow-2xl bg-gradient-to-br from-white/10 via-purple-200/10 to-pink-200/10 glass-effect border border-white/20" style="border-radius:2.5rem;">
+        <!-- Header del Calendario -->
+        <div class="p-6 border-b border-white/20 bg-gradient-to-r from-purple-400/20 via-white/10 to-pink-400/20 rounded-t-[2.5rem]" style="border-top-left-radius:2.5rem;border-top-right-radius:2.5rem;">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-semibold text-white">Horarios del Día</h2>
+              <p class="text-white/70 mt-1">Gestiona tu agenda diaria con visualización avanzada</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2 text-white/70 text-sm">
+                <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                <span>Disponible</span>
+                <div class="w-3 h-3 bg-red-400 rounded-full ml-3"></div>
+                <span>Ocupado</span>
+                <div class="w-3 h-3 bg-green-400 rounded-full ml-3"></div>
+                <span>Atendido</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Grid de Horarios Mejorado -->
+        <div class="p-6 max-h-[700px] overflow-y-auto scrollbar-custom bg-gradient-to-br from-white/10 via-purple-100/10 to-pink-100/10 rounded-b-[2.5rem]" style="border-bottom-left-radius:2.5rem;border-bottom-right-radius:2.5rem;">
+          <div class="appointment-grid">
+            <!-- Columna de Tiempo -->
+            <div class="time-column pr-4 xl:block hidden">
+              <div class="sticky top-0 bg-white/10 rounded-2xl p-4 mb-4">
+                <h4 class="text-white font-semibold text-sm mb-2">Línea de Tiempo</h4>
+                <div class="timeline-marker h-64 relative">
+                  <div class="timeline-dot bg-blue-500" style="top: 20px;"></div>
+                  <div class="timeline-dot bg-yellow-500" style="top: 80px;"></div>
+                  <div class="timeline-dot bg-green-500" style="top: 140px;"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Columnas de Citas -->
+            <div class="xl:col-span-3 col-span-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {% for slot in bloques %}
+                {# Slot pasado, disponible, sin cita #}
+                {% if slot.estado == 'disponible' and slot.ya_pasado %}
+                  <div class="slot-card slot-disponible p-4 relative" title="Horario libre (no disponible, ya pasó)">
+                    <div class="floating-tooltip" style="top: -40px; left: 50%;">Horario libre (no disponible, ya pasó)</div>
+                    <div class="flex items-center justify-between mb-3">
+                      <div class="flex items-center gap-3">
+                        <div class="text-center">
+                          <div class="text-xl font-bold text-gray-900">{{ slot.hora }}</div>
+                          <div class="text-xs text-gray-500">{{ doctor.duracion_atencion|default:30 }}min</div>
+                        </div>
+                        <div class="patient-avatar">
+                          <i class="fas fa-plus"></i>
+                        </div>
+                      </div>
+                      <span class="status-badge status-{{ slot.estado }}">
+                        <i class="fas fa-clock"></i> Disponible
+                      </span>
+                    </div>
+                    <div class="ml-16">
+                      <div class="font-semibold text-gray-900">Horario Libre</div>
+                      <div class="text-sm text-gray-600">No disponible, ya pasó</div>
+                    </div>
+                  </div>
+                {% elif slot.estado == 'disponible' and not slot.ya_pasado and not slot.cita %}
+                  {% with fecha_str=fecha_actual|date:'Y-m-d' %}
+                    <a class="slot-card slot-disponible-futuro p-4 relative {% if not permissions.add_cita %}cursor-not-allowed{% else %}cursor-pointer{% endif %}"
+                      {% if permissions.add_cita %}
+                        href="{% url 'doctor:cita_create' %}?fecha={{ fecha_str|urlencode }}&next=calendar"
+                        title="Agendar cita"
+                        onclick="console.log('Clic en slot disponible:', this.href); event.stopPropagation(); window.location.href=this.href; return false;"
+                      {% else %}
+                        tabindex="-1" aria-disabled="true" title="No tienes permiso para crear citas"
+                      {% endif %}>
+                      <div class="floating-tooltip" style="top: -40px; left: 50%;">
+                        {% if permissions.add_cita %}Clic para agendar nueva cita{% else %}No tienes permiso para crear citas{% endif %}
+                      </div>
+                      <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                          <div class="text-center">
+                            <div class="text-xl font-bold text-gray-900">{{ slot.hora }}</div>
+                            <div class="text-xs text-gray-500">{{ doctor.duracion_atencion|default:30 }}min</div>
+                          </div>
+                          <div class="patient-avatar">
+                            <i class="fas fa-plus"></i>
+                          </div>
+                        </div>
+                        <span class="status-badge status-{{ slot.estado }}">
+                          <i class="fas fa-clock"></i> Disponible
+                        </span>
+                      </div>
+                      <div class="ml-16">
+                        <div class="font-semibold text-gray-900">Horario Libre</div>
+                        <div class="text-sm text-gray-600">Clic para agendar una cita</div>
+                      </div>
+                    </a>
+                  {% endwith %}
+                {% elif slot.cita %}
+                  {% url 'doctor:cita_update' slot.cita.id as edit_url %}
+                  {% url 'doctor:cita_delete' slot.cita.id as del_url %}
+                  <div class="slot-card slot-{{ slot.estado }} p-4 relative group" title="Ver detalles">
+                    <div class="floating-tooltip" style="top: -40px; left: 50%;">Clic para ver detalles de la cita</div>
+                    <div class="flex flex-row items-center justify-end gap-6 absolute top-4 right-4 z-10">
+                      {% if permissions.change_cita %}
+                        <a href="{{ edit_url }}?next=diario"
+                           class="premium-button !p-3 !bg-[var(--aurora2)]/10 hover:!bg-[var(--aurora2)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--aurora2)]"
+                           title="Editar"
+                           onclick="event.stopPropagation();">
+                          <i class="fas fa-pen-to-square text-[var(--aurora1)] text-xl"></i>
+                        </a>
+                      {% endif %}
+                      {% if permissions.delete_cita %}
+                        <a href="#"
+                           class="premium-button !p-3 !bg-red-100 hover:!bg-red-200 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
+                           onclick="event.stopPropagation(); openDeleteModal('{{ slot.cita.id }}', 'Cita #{{ slot.cita.id }}'); return false;"
+                           title="Eliminar">
+                          <i class="fas fa-trash-can text-red-600 text-xl"></i>
+                        </a>
+                      {% endif %}
+                    </div>
+                    <div class="flex items-center justify-between mb-3">
+                      <div class="flex items-center gap-3">
+                        <div class="text-center">
+                          <div class="text-xl font-bold text-gray-900">{{ slot.hora }}</div>
+                          <div class="text-xs text-gray-500">{{ doctor.duracion_atencion|default:30 }}min</div>
+                        </div>
+                        <div class="patient-avatar">
+                          {% if slot.cita and slot.cita.paciente %}
+                            {{ slot.cita.paciente.nombres|first|upper }}
+                          {% else %}
+                            <i class="fas fa-user"></i>
+                          {% endif %}
+                        </div>
+                      </div>
+                      <span class="status-badge status-{{ slot.estado }}">
+                        {% if slot.estado == 'ocupado' %}
+                          <i class="fas fa-user-clock"></i> Ocupado
+                        {% elif slot.estado == 'atendido' %}
+                          <i class="fas fa-check-circle"></i> Atendido
+                        {% endif %}
+                      </span>
+                    </div>
+                    <div class="ml-16">
+                      <div class="font-semibold text-gray-900">{{ slot.cita.paciente }}</div>
+                      <div class="text-sm text-gray-600">
+                        {% if slot.cita and slot.cita.paciente %}
+                          Edad: {{ slot.cita.paciente.edad }} años
+                        {% else %}
+                          {{ slot.cita.observaciones|default:'-' }}
+                        {% endif %}
+                      </div>
+                      {% if slot.cita and slot.cita.telefono %}
+                        <div class="text-xs text-gray-500 mt-1">📞 {{ slot.cita.telefono }}</div>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endif %}
+              {% empty %}
+                <div class="flex flex-col items-center justify-center h-64 text-center text-gray-400 col-span-3">
+                  <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <p class="text-lg font-semibold">No hay horarios disponibles para este día.</p>
+                  <p class="text-sm">Verifica la configuración de horarios o selecciona otro día.</p>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+
+<!-- Modal Crear Cita Premium -->
+{# Eliminado: ya no se usa modal para crear cita #}
+
+<!-- Modal Editar Cita Premium -->
+<div id="modal-editar-cita" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="modal-close" onclick="cerrarModalEditarCita()">
+      <i class="fas fa-times"></i>
+    </div>
+    <div id="modal-editar-cita-content" class="p-0"></div>
+  </div>
+</div>
+
+<!-- Modal Eliminar Premium -->
+<div id="modal-eliminar-cita" class="modal-overlay hidden">
+  <div class="modal-content text-center">
+    <div class="modal-close" onclick="cerrarModalEliminarCita()">
+      <i class="fas fa-times"></i>
+    </div>
+    <div id="modal-eliminar-cita-content"></div>
+  </div>
+</div>
+
+<script>
+console.log('JS de calendario_diario cargado'); // DEPURACIÓN: para saber si el JS se ejecuta
+
+// --- MODAL EDITAR ---
+function abrirModalEditarCita(url) {
+  const modal = document.getElementById('modal-editar-cita');
+  const content = document.getElementById('modal-editar-cita-content');
+  modal.classList.remove('hidden');
+  setTimeout(() => modal.classList.add('show'), 10);
+  content.innerHTML = '<div class="flex justify-center items-center min-h-[300px] text-gray-400"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
+  fetch(url)
+    .then(r => r.text())
+    .then(html => {
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+      // Corrige el valor del input date si existe
+      const dateInput = temp.querySelector('input[type="date"]');
+      if (dateInput && dateInput.value && dateInput.value.includes('/')) {
+        const parts = dateInput.value.split('/');
+        if (parts.length === 3) {
+          dateInput.value = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+        }
+      }
+      const form = temp.querySelector('form');
+      if (form) {
+        content.innerHTML = '';
+        content.appendChild(form);
+        bindFormAjax(form, cerrarModalEditarCita);
+      } else {
+        content.innerHTML = '<div class="p-8 text-center text-danger">No se pudo cargar el formulario.</div>';
+      }
+    })
+    .catch(() => {
+      content.innerHTML = '<div class="p-8 text-center text-danger">Error al cargar el formulario.</div>';
+    });
+}
+function cerrarModalEditarCita() {
+  const modal = document.getElementById('modal-editar-cita');
+  modal.classList.remove('show');
+  setTimeout(() => modal.classList.add('hidden'), 200);
+}
+
+// --- MODAL ELIMINAR ---
+function abrirModalEliminarCita(url, label) {
+  const modal = document.getElementById('modal-eliminar-cita');
+  const content = document.getElementById('modal-eliminar-cita-content');
+  modal.classList.remove('hidden');
+  setTimeout(() => modal.classList.add('show'), 10);
+  content.innerHTML = `
+    <div class="mb-4">
+      <i class="fas fa-trash-alt text-red-500 text-4xl mb-2"></i>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">¿Eliminar cita?</h3>
+      <div class="text-gray-600 mb-2">${label ? label : ''}</div>
+      <div class="text-gray-500 text-sm mb-4">Esta acción no se puede deshacer.</div>
+    </div>
+    <div class="flex justify-center gap-4 mt-6">
+      <button onclick="cerrarModalEliminarCita()" class="px-5 py-2 rounded-xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition">Cancelar</button>
+      <button onclick="confirmarEliminarCita('${url}')" class="px-5 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition">Eliminar</button>
+    </div>
+  `;
+}
+function cerrarModalEliminarCita() {
+  const modal = document.getElementById('modal-eliminar-cita');
+  modal.classList.remove('show');
+  setTimeout(() => modal.classList.add('hidden'), 200);
+}
+function confirmarEliminarCita(url) {
+  fetch(url, {
+    method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCookie('csrftoken') }
+  })
+  .then(function(r) {
+    // Si la respuesta no es JSON, probablemente es login
+    return r.json().catch(function() {
+      window.location.reload();
+      return {};
+    });
+  })
+  .then(function(data) {
+    if (data.success) {
+      window.location.reload();
+    } else {
+      alert('No se pudo eliminar la cita.');
+      cerrarModalEliminarCita();
+    }
+  })
+  .catch(function() {
+    alert('Error al eliminar la cita.');
+    cerrarModalEliminarCita();
+  });
+}
+
+// --- UTILIDADES ---
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+// Enlaza el envío AJAX de formularios de crear/editar
+function bindFormAjax(form, closeModalFn) {
+  form.onsubmit = function(e) {
+    e.preventDefault();
+    const formData = new FormData(form);
+    fetch(form.action, {
+      method: form.method,
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCookie('csrftoken') }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        window.location.reload();
+      } else if (data.html) {
+        // Si hay errores, recarga el form con errores
+        const temp = document.createElement('div');
+        temp.innerHTML = data.html;
+        const newForm = temp.querySelector('form');
+        if (newForm) {
+          form.replaceWith(newForm);
+          bindFormAjax(newForm, closeModalFn);
+        }
+      } else {
+        alert('Error al guardar.');
+      }
+    })
+    .catch(() => {
+      alert('Error de red.');
+    });
+  };
+}
+// Cierra modal al hacer click fuera del contenido
+['modal-crear-cita','modal-editar-cita','modal-eliminar-cita'].forEach(id => {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.addEventListener('mousedown', function(e) {
+      if (e.target === modal) {
+        if (id === 'modal-crear-cita') cerrarModalCrearCita();
+        if (id === 'modal-editar-cita') cerrarModalEditarCita();
+        if (id === 'modal-eliminar-cita') cerrarModalEliminarCita();
+      }
+    });
+  }
+});
+
+// --- Función dummy para evitar error si no usas verDetalleCita ---
+function verDetalleCita(id) {
+  // Puedes implementar modal de detalle aquí si lo deseas
+}
+
+window.abrirModalCrearCita = undefined; // Dummy para evitar errores si algún otro script lo llama
+</script>
+</body>
+</html>
+{% endblock %}

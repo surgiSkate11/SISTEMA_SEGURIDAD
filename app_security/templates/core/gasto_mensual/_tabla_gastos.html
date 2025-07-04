@@ -1,0 +1,93 @@
+{% for gasto in gastos %}
+<tr class="table-row-hover">
+    <td class="premium-cell">
+        <div class="flex items-center space-x-4">
+            <div class="premium-icon-container">
+                {% with tipo=gasto.tipo_gasto.nombre|default_if_none:'' %}
+                    {% if tipo|lower == "alquiler" %}
+                        <i class="fas fa-house"></i>
+                    {% elif tipo|lower == "servicios" %}
+                        <i class="fas fa-bolt"></i>
+                    {% elif tipo|lower == "transporte" %}
+                        <i class="fas fa-bus"></i>
+                    {% elif tipo|lower == "comida" %}
+                        <i class="fas fa-utensils"></i>
+                    {% elif tipo|lower == "salud" %}
+                        <i class="fas fa-heart-pulse"></i>
+                    {% elif tipo|lower == "educación" or tipo|lower == "educacion" %}
+                        <i class="fas fa-graduation-cap"></i>
+                    {% else %}
+                        <i class="fas fa-chart-pie"></i>
+                    {% endif %}
+                {% endwith %}
+            </div>
+            <div>
+                <div class="text-lg font-bold text-[var(--text-dark)] mb-1">{{ gasto.tipo_gasto.nombre }}</div>
+                <span class="premium-badge">
+                    <i class="fas fa-rotate mr-2"></i>
+                    Gasto recurrente
+                </span>
+            </div>
+        </div>
+    </td>
+    <td class="premium-cell">
+        <div class="text-2xl font-bold text-[var(--text-dark)] mb-1">${{ gasto.valor|floatformat:2 }}</div>
+        <div class="text-sm text-[var(--text-secondary)] font-medium flex items-center">
+            <i class="fas fa-coins mr-2"></i>
+            USD
+        </div>
+    </td>
+    <td class="premium-cell">
+        <div class="text-base text-[var(--text-dark)] max-w-xs truncate flex items-center" title="{{ gasto.observacion }}">
+            <i class="fas fa-circle-info mr-2 text-[var(--aurora2)]"></i>
+            {{ gasto.observacion|default:"Sin observaciones" }}
+        </div>
+    </td>
+    <td class="premium-cell">
+        <div class="flex flex-col">
+            <span class="text-base font-semibold text-[var(--text-dark)] mb-1 flex items-center">
+                <i class="fas fa-calendar-check mr-2 text-[var(--aurora1)]"></i>
+                {{ gasto.created_at|date:"d M Y"|default:"Hoy" }}
+            </span>
+        </div>
+    </td>
+    <td class="premium-cell">
+        <div class="flex justify-center space-x-4">
+            <a href="{% url 'core:gasto_mensual_update' gasto.pk %}" 
+               class="premium-button !p-3 !bg-[var(--aurora2)]/10 hover:!bg-[var(--aurora2)]/20 !shadow-none" 
+               title="Editar">
+                <i class="fas fa-pen-to-square text-[var(--aurora1)] text-xl"></i>
+            </a>
+            <a href="#"
+               class="premium-button !p-3 !bg-red-100 hover:!bg-red-200 !shadow-none"
+               onclick="openDeleteModal('{{ gasto.pk }}', '{{ gasto.tipo_gasto.nombre }}')"
+               title="Eliminar">
+                <i class="fas fa-trash-can text-red-600 text-xl"></i>
+            </a>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="5" class="px-8 py-16 text-center">
+        <div class="flex flex-col items-center space-y-6">
+            <div class="premium-icon-container !w-24 !h-24 mb-4">
+                <i class="fas fa-file-circle-plus !text-4xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-[var(--text-dark)]">
+                No hay gastos registrados
+            </h3>
+            <p class="text-[var(--text-secondary)] text-lg mb-6">
+                Comienza agregando tu primer gasto mensual
+            </p>
+            <a href="{% url 'core:gasto_mensual_create' %}" 
+               class="premium-button text-white flex items-center space-x-3">
+                <span class="text-lg">Agregar Gasto</span>
+                <span class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <i class="fas fa-plus text-lg"></i>
+                </span>
+            </a>
+        </div>
+    </td>
+</tr>
+{% endfor %}

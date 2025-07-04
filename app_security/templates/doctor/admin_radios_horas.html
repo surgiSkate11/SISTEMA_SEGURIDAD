@@ -1,0 +1,9 @@
+{% if bloques %}
+  {% for hora in bloques %}
+    <label style="display:block;margin-bottom:4px;">
+      <input type="radio" name="hora_cita" value="{{ hora }}"> {{ hora }}
+    </label>
+  {% endfor %}
+{% else %}
+  <span style="color:#888;">No hay horarios disponibles</span>
+{% endif %}

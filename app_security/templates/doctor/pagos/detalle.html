@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Detalle de Pago{% endblock %}
+{% block content %}
+<div class="premium-card max-w-3xl mx-auto mt-8 p-8">
+    <h2 class="text-3xl font-bold mb-6 text-[var(--aurora1)] flex items-center gap-3">
+        <i class="fas fa-money-bill-wave text-[var(--gold-premium)]"></i>
+        Detalle del Pago #{{ pago.id }}
+    </h2>
+    <div class="mb-6">
+        <strong>Pagador:</strong> {{ pago.nombre_pagador|default:'-' }}<br>
+        <strong>Atención:</strong> {{ pago.atencion|default:'-' }}<br>
+        <strong>Método:</strong> {{ pago.get_metodo_pago_display }}<br>
+        <strong>Monto Total:</strong> ${{ pago.monto_total }}<br>
+        <strong>Estado:</strong> {{ pago.get_estado_display }}<br>
+        <strong>Fecha:</strong> {{ pago.fecha_pago|date:'d/m/Y H:i' }}
+    </div>
+    <h3 class="text-xl font-semibold mb-4">Detalle de Items</h3>
+    <table class="w-full text-center mb-8">
+        <thead>
+            <tr>
+                <th class="premium-table-header">Descripción</th>
+                <th class="premium-table-header">Monto</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in detalles %}
+            <tr>
+                <td class="premium-cell">{{ detalle.descripcion }}</td>
+                <td class="premium-cell">${{ detalle.monto }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2" class="text-center text-slate-400">No hay detalles registrados</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'doctor:imprimir_pago_pdf' pago.id %}" target="_blank" class="premium-form-btn">
+        <i class="fas fa-file-pdf"></i> Imprimir PDF
+    </a>
+    <a href="{% url 'doctor:pagos_list' %}" class="premium-form-cancel ml-4">
+        <i class="fas fa-arrow-left"></i> Volver
+    </a>
+</div>
+{% endblock %}

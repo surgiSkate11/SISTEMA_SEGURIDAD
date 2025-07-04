@@ -1,0 +1,57 @@
+{% for medicamento in medicamentos %}
+<tr class="table-row-hover">
+    <td class="premium-cell">
+        <div class="flex items-center space-x-4">
+            <div class="premium-icon-container">
+                <i class="fas fa-capsules"></i>
+            </div>
+            <div>
+                <div class="text-lg font-bold text-[var(--text-dark)] mb-1">{{ medicamento.nombre }}</div>
+            </div>
+        </div>
+    </td>
+    <td class="premium-cell text-center">{{ medicamento.tipo|default:"-" }}</td>
+    <td class="premium-cell text-center">{{ medicamento.marca_medicamento|default:"Sin marca" }}</td>
+    <td class="premium-cell text-center">{{ medicamento.cantidad|default:"-" }}</td>
+    <td class="premium-cell text-center">${{ medicamento.precio|floatformat:2 }}</td>
+    <td class="premium-cell text-center">
+        {% if medicamento.disponible %}
+            <span class="premium-badge bg-green-100 text-green-700"><i class="fas fa-check-circle mr-1"></i>Disponible</span>
+        {% else %}
+            <span class="premium-badge bg-red-100 text-red-700"><i class="fas fa-times-circle mr-1"></i>No disponible</span>
+        {% endif %}
+    </td>
+    <td class="premium-cell text-center">
+        <div class="flex flex-row items-center justify-center gap-6">
+            <a href="{% url 'core:medicamento_update' medicamento.pk %}"
+               class="premium-button !p-3 !bg-[var(--aurora2)]/10 hover:!bg-[var(--aurora2)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--aurora2)]"
+               title="Editar">
+                <i class="fas fa-pen-to-square text-[var(--aurora1)] text-xl"></i>
+            </a>
+            <a href="#"
+               class="premium-button !p-3 !bg-red-100 hover:!bg-red-200 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
+               onclick="openDeleteModal('{{ medicamento.pk }}', '{{ medicamento.nombre }}')"
+               title="Eliminar">
+                <i class="fas fa-trash-can text-red-600 text-xl"></i>
+            </a>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="7" class="px-8 py-8 border-b-2 border-[var(--gold-premium)] gold-gradient text-center">
+        <div class="flex flex-col items-center space-y-6">
+            <div class="premium-icon-container !w-24 !h-24 mb-4">
+                <i class="fas fa-pills !text-4xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-[var(--text-dark)]">
+                No hay medicamentos registrados
+            </h3>
+            <p class="text-[var(--text-secondary)] text-lg mb-6">
+                Comienza agregando tu primer medicamento
+            </p>
+   
+        </div>
+    </td>
+</tr>
+{% endfor %}

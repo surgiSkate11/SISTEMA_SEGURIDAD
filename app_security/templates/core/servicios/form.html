@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+{% include 'fragments/messages.html' %}
+{% include 'fragments/form_errors.html' %}
+<style>
+:root {
+    --primary-blue: #2563eb;
+    --aurora1: #6366f1;
+    --aurora2: #22d3ee;
+    --aurora3: #fbbf24;
+    --btn-login: #4f8cff;
+    --btn-login-hover: #6f4fff;
+    --gold-premium: #ffd700;
+    --gold-light: #ffe066;
+    --gold-bg: #fffbe7;
+    --gold-hover: #fff7b2;
+    --gold-soft: #e6c97a;
+    --text-dark: #111827;
+    --text-secondary: #64748b;
+    --text-sidebar: #374151;
+    --bg-body: #f9fafb;
+    --bg-secondary: #e0e7ff;
+    --text-shadow: #c7d2fe44;
+    --danger: #ef4444;
+}
+.premium-form-card {
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(24px);
+    border: 2.5px solid var(--gold-premium);
+    box-shadow: 0 24px 48px -12px var(--aurora1), 0 0 0 4px var(--gold-light);
+    border-radius: 2.5rem;
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
+    max-width: 38rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInCard 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes fadeInCard {
+    0% { opacity: 0; transform: translateY(40px) scale(0.98); }
+    100% { opacity: 1; transform: none; }
+}
+.premium-form-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, var(--aurora1) 0%, var(--aurora2) 100%);
+    opacity: 0.08;
+    z-index: 0;
+    pointer-events: none;
+}
+.premium-form-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    background: linear-gradient(90deg, var(--gold-premium), var(--aurora2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.premium-form-icon {
+    color: var(--gold-premium);
+    font-size: 2.5rem;
+    margin-right: 0.5rem;
+}
+@media (max-width: 600px) {
+    .premium-form-card {
+        padding: 1.2rem 0.5rem 1.5rem 0.5rem;
+        border-radius: 1.2rem;
+    }
+    .premium-form-title {
+        font-size: 1.5rem;
+    }
+}
+</style>
+<div class="flex justify-center items-center min-h-[60vh]">
+    <div class="premium-form-card w-full">
+        <div class="premium-form-title">
+            <span class="premium-form-icon">
+                <img src="{% static 'img/iconos/servicio.svg' %}" alt="Servicio" style="height:2.5rem;width:2.5rem;">
+            </span>
+            {{ view.object.pk|yesno:'Editar,Registrar' }} Servicio
+        </div>
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block font-semibold">{{ field.label }}{% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="text-gray-500">{{ field.help_text }}</small>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <div class="flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{% url 'core:servicios_list' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

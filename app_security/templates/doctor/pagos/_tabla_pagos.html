@@ -1,0 +1,52 @@
+{% for pago in pagos %}
+<tr class="table-row-hover">
+    <td class="premium-cell text-center font-bold">#{{ pago.id }}</td>
+    <td class="premium-cell">{{ pago.nombre_pagador|default:'-' }}</td>
+    <td class="premium-cell">{{ pago.atencion|default:'-' }}</td>
+    <td class="premium-cell text-center">{{ pago.get_metodo_pago_display }}</td>
+    <td class="premium-cell text-center">${{ pago.monto_total }}</td>
+    <td class="premium-cell text-center">{{ pago.get_estado_display }}</td>
+    <td class="premium-cell text-center">{{ pago.fecha_pago|date:'d/m/Y H:i' }}</td>
+    <td class="premium-cell text-center">
+        <div class="flex flex-row items-center justify-center gap-4">
+            <a href="{% url 'doctor:pago_detalle' pago.id %}"
+               class="premium-button !p-3 !bg-[var(--aurora1)]/10 hover:!bg-[var(--aurora1)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--aurora1)]"
+               title="Ver Detalle">
+                <i class="fas fa-eye text-[var(--aurora1)] text-xl"></i>
+            </a>
+            <a href="{% url 'doctor:imprimir_pago_pdf' pago.id %}" target="_blank"
+               class="premium-button !p-3 !bg-[var(--gold-premium)]/10 hover:!bg-[var(--gold-premium)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--gold-premium)]"
+               title="Imprimir PDF">
+                <i class="fas fa-file-pdf text-[var(--gold-premium)] text-xl"></i>
+            </a>
+            <a href="{% url 'doctor:pago_update' pago.id %}"
+               class="premium-button !p-3 !bg-[var(--aurora2)]/10 hover:!bg-[var(--aurora2)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--aurora2)]"
+               title="Editar">
+                <i class="fas fa-pen-to-square text-[var(--aurora1)] text-xl"></i>
+            </a>
+            <a href="#"
+               class="premium-button !p-3 !bg-red-100 hover:!bg-red-200 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
+               onclick="openDeleteModal('{{ pago.id }}', 'Pago #{{ pago.id }}')"
+               title="Eliminar">
+                <i class="fas fa-trash-can text-red-600 text-xl"></i>
+            </a>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="8" class="px-8 py-8 border-b-2 border-[var(--gold-premium)] gold-gradient text-center">
+        <div class="flex flex-col items-center space-y-6">
+            <div class="premium-icon-container !w-24 !h-24 mb-4">
+                <i class="fas fa-money-bill-wave !text-4xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-[var(--text-dark)]">
+                No hay pagos registrados
+            </h3>
+            <p class="text-[var(--text-secondary)] text-lg mb-6">
+                Comienza agregando tu primer pago
+            </p>
+        </div>
+    </td>
+</tr>
+{% endfor %}

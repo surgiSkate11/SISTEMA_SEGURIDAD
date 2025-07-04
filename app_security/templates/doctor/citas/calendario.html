@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="bg-gradient-to-br from-[#f9fafb] via-[#e0e7ff] to-[#fffbe7] border-b h-20 flex items-center px-8 justify-between shadow-lg mb-4">
+  <h1 class="text-2xl font-bold neon-glow tracking-tight flex items-center" style="color: var(--primary-blue);">
+    <i class="bi bi-calendar2-week" style="margin-right: 0.50rem;"></i>
+    <span>Calendario Médico</span>
+  </h1>
+  <div class="flex gap-6 items-center pl-4 pr-2">
+    <a href="{% url 'doctor:calendario_diario' %}" id="nav-diaria" class="nav-btn btn-premium flex items-center justify-center text-center{% if request.resolver_match.url_name == 'calendario_diario' %} bg-primary-blue text-white{% endif %}">Diario</a>
+    <a href="{% url 'doctor:calendario_semanal' %}" id="nav-semanal" class="nav-btn btn-premium flex items-center justify-center text-center{% if request.resolver_match.url_name == 'calendario_semanal' %} bg-primary-blue text-white{% endif %}">Semanal</a>
+  </div>
+</div>
+
+<div class="min-h-screen p-4 lg:p-8 rounded-[2.5rem]" style="border-radius:2.5rem;">
+  <div class="w-full mx-auto px-4 py-8 shadow-2xl p-2 md:p-8 border-2 backdrop-blur-xl" style="border-radius:2.5rem;background:transparent;">
+    <div class="premium-container" style="width:100%;height:100%;border-radius:2.5rem;overflow:hidden;">
+      {% block calendario_content %}
+      <!-- Aquí se mostrará el contenido de la vista seleccionada (mensual, semanal, diaria) -->
+      {% endblock %}
+    </div>
+  </div>
+</div>
+
+<style>
+:root {
+    --primary-blue: #2563eb;
+    --aurora1: #6366f1;
+    --aurora2: #22d3ee;
+    --aurora3: #fbbf24;
+    --gold-premium: #ffd700;
+    --gold-hover: #fff7b2;
+    --gold-soft: #e6c97a;
+    --premium-shadow: 0 4px 24px 0 #c7d2fe44;
+    --sidebar-link: #374151;
+    --secondary-text: #64748b;
+    --dark-text: #111827;
+    --danger: #ef4444;
+}
+
+/* Contenedor Premium con Gradiente Mejorado */
+.premium-container {
+  background: linear-gradient(135deg, 
+    rgba(79, 70, 229, 0.95) 0%,      /* Indigo más intenso */
+    rgba(99, 102, 241, 0.90) 15%,    /* Indigo vibrante */
+    rgba(129, 140, 248, 0.85) 30%,   /* Indigo claro */
+    rgba(139, 92, 246, 0.88) 45%,    /* Violeta */
+    rgba(168, 85, 247, 0.90) 60%,    /* Púrpura */
+    rgba(217, 70, 239, 0.85) 75%,    /* Magenta */
+    rgba(236, 72, 153, 0.90) 90%,    /* Rosa vibrante */
+    rgba(251, 113, 133, 0.85) 100%   /* Rosa suave */
+  );
+  border: 2px solid;
+  border-image: linear-gradient(135deg, 
+    rgba(139, 92, 246, 0.6) 0%,
+    rgba(236, 72, 153, 0.4) 50%,
+    rgba(251, 113, 133, 0.3) 100%
+  ) 1;
+  box-shadow: 
+    0 25px 50px -12px rgba(79, 70, 229, 0.25),
+    0 20px 40px -8px rgba(139, 92, 246, 0.15),
+    0 10px 20px -4px rgba(236, 72, 153, 0.10),
+    0 4px 8px -2px rgba(251, 113, 133, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 2.5rem !important;
+}
+.premium-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.05) 25%, 
+    transparent 50%, 
+    rgba(255, 255, 255, 0.03) 75%, 
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 2.5rem !important;
+}
+.premium-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(139, 92, 246, 0.8) 25%, 
+    rgba(236, 72, 153, 0.9) 50%, 
+    rgba(251, 113, 133, 0.8) 75%, 
+    transparent 100%
+  );
+  border-radius: 2.5rem 2.5rem 0 0 !important;
+  z-index: 2;
+}
+.premium-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 35px 70px -15px rgba(79, 70, 229, 0.30),
+    0 25px 50px -10px rgba(139, 92, 246, 0.20),
+    0 15px 30px -5px rgba(236, 72, 153, 0.15),
+    0 8px 16px -3px rgba(251, 113, 133, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+}
+.neon-glow {
+    text-shadow: 0 0 5px #c7d2fe44, 0 0 10px #6366f1, 0 0 15px #22d3ee, 0 0 20px #ffd70044;
+    background: linear-gradient(100deg, var(--aurora1) 60%, var(--aurora2) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+.btn-premium {
+    padding: 0.75rem 1.5rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 1rem;
+    background: linear-gradient(90deg, var(--aurora1) 60%, var(--aurora2) 100%);
+    color: white;
+    border: 2px solid var(--aurora1);
+    box-shadow: var(--premium-shadow);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+.btn-premium:hover, .btn-premium.active {
+    background: linear-gradient(90deg, var(--gold-premium) 60%, var(--aurora2) 100%);
+    color: var(--sidebar-link);
+    border-color: var(--gold-premium);
+    box-shadow: 0 12px 30px #ffe06699;
+}
+.bg-gold-premium {
+    background: linear-gradient(90deg, var(--gold-premium) 0%, #ffe066 60%, var(--aurora1) 100%);
+    color: var(--sidebar-link);
+}
+.bg-gold-premium:hover {
+    background: linear-gradient(90deg, var(--gold-hover) 0%, #ffe066 60%, var(--aurora1) 100%);
+    color: var(--sidebar-link);
+}
+.premium-calendar-content {
+    background: rgba(255,255,255,0.18);
+    border-radius: 1rem;
+    box-shadow: var(--premium-shadow);
+}
+@media (min-width: 640px) {
+  .nav-btn.btn-premium {
+    min-width: 120px;
+  }
+}
+</style>
+{% endblock %}

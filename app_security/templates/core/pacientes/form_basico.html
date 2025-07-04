@@ -1,0 +1,337 @@
+{# Fragmento AJAX/modal para crear paciente. No usar extends ni bloques. #}
+{% load static %}
+<style>
+:root {
+    --primary-blue: #2563eb;
+    --aurora1: #6366f1;
+    --aurora2: #22d3ee;
+    --aurora3: #fbbf24;
+    --btn-login: #4f8cff;
+    --btn-login-hover: #6f4fff;
+    --gold-premium: #ffd700;
+    --gold-light: #ffe066;
+    --gold-bg: #fffbe7;
+    --gold-hover: #fff7b2;
+    --gold-soft: #e6c97a;
+    --text-dark: #111827;
+    --text-secondary: #64748b;
+    --text-sidebar: #374151;
+    --bg-body: #f9fafb;
+    --bg-secondary: #e0e7ff;
+    --text-shadow: #c7d2fe44;
+    --danger: #ef4444;
+}
+.premium-form-card {
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(24px);
+    border: 2.5px solid var(--gold-premium);
+    box-shadow: 0 12px 24px -8px var(--aurora1), 0 0 0 2px var(--gold-light);
+    border-radius: 1.5rem;
+    padding: 1.5rem 0.7rem 1.2rem 0.7rem;
+    margin: 2.5rem auto;
+    max-width: 98vw;
+    width: 100%;
+    min-width: 0;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 90vh;
+    animation: fadeInCard 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes fadeInCard {
+    0% { opacity: 0; transform: translateY(40px) scale(0.98); }
+    100% { opacity: 1; transform: none; }
+}
+.premium-form-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, var(--aurora1) 0%, var(--aurora2) 100%);
+    opacity: 0.08;
+    z-index: 0;
+    pointer-events: none;
+}
+.premium-form-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    letter-spacing: 0.03em;
+    animation: fadeInTitle 1.2s cubic-bezier(0.4,0,0.2,1);
+    justify-content: center;
+    text-align: center;
+}
+.premium-form-title .premium-title-text {
+    background: linear-gradient(90deg, var(--aurora1), var(--aurora2), var(--gold-premium));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+@keyframes fadeInTitle {
+    0% { opacity: 0; transform: translateY(-30px); }
+    100% { opacity: 1; transform: none; }
+}
+.premium-form-title i {
+    color: var(--gold-premium);
+    font-size: 2.7rem;
+    filter: drop-shadow(0 2px 4px var(--gold-soft));
+}
+.premium-form-group {
+    margin-bottom: 1.7rem;
+    position: relative;
+}
+.premium-form-label {
+    display: block;
+    font-weight: 700;
+    color: var(--aurora1);
+    margin-bottom: 0.5rem;
+    font-size: 1.13rem;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 8px var(--text-shadow);
+}
+.premium-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.premium-input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--aurora2);
+    font-size: 1.2rem;
+    pointer-events: none;
+    transition: color 0.2s;
+    z-index: 2;
+}
+.premium-form-card input,
+.premium-form-card select,
+.premium-form-card textarea {
+    width: 100%;
+    border-radius: 1rem;
+    border: 2px solid var(--gold-premium);
+    background: rgba(255,255,255,0.93);
+    padding: 0.85rem 1.25rem 0.85rem 2.7rem;
+    font-size: 1.08rem;
+    color: var(--text-dark);
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 2px 8px 0 var(--aurora1);
+    outline: none;
+    z-index: 1;
+}
+.premium-form-card input:focus,
+.premium-form-card select:focus,
+.premium-form-card textarea:focus {
+    border-color: var(--aurora1);
+    background: rgba(255,255,255,0.99);
+    box-shadow: 0 0 0 6px var(--aurora2);
+}
+.premium-form-error {
+    display: inline-block;
+    background: var(--gold-bg);
+    color: var(--danger);
+    border: 1.5px solid var(--gold-premium);
+    border-radius: 0.75rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.98rem;
+    margin-bottom: 0.5rem;
+    margin-top: 0.2rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px 0 var(--gold-light);
+    animation: fadeInError 0.5s;
+}
+@keyframes fadeInError {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: none; }
+}
+.premium-form-help {
+    font-size: 0.97rem;
+    color: var(--aurora2);
+    margin-top: 0.2rem;
+    margin-left: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.premium-form-btn {
+    background: linear-gradient(135deg, var(--aurora1) 0%, var(--aurora2) 100%);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 1.2rem;
+    padding: 0.85rem 2.2rem;
+    font-size: 1.15rem;
+    box-shadow: 0 10px 15px -3px var(--primary-blue), 0 0 0 1px var(--aurora1);
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    border: 2px solid var(--gold-premium);
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.premium-form-btn:hover {
+    background: linear-gradient(135deg, var(--btn-login) 0%, var(--btn-login-hover) 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 16px 32px -8px var(--aurora1), 0 0 0 3px var(--gold-premium);
+}
+.premium-form-cancel {
+    border: 2px solid var(--gold-premium);
+    color: var(--aurora1);
+    background: var(--gold-bg);
+    border-radius: 1.2rem;
+    padding: 0.85rem 2.2rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-left: 1rem;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.premium-form-cancel:hover {
+    background: var(--gold-hover);
+    color: var(--aurora2);
+}
+@media (max-width: 640px) {
+    .premium-form-card {
+        padding: 0.7rem 0.2rem;
+        border-radius: 0.8rem;
+        max-width: 99vw;
+        margin: 1rem auto;
+    }
+    .premium-form-title {
+        font-size: 1.2rem;
+        gap: 0.3rem;
+    }
+    .premium-form-title i {
+        font-size: 1.1rem;
+    }
+}
+body.modal-open {
+    overflow: hidden !important;
+}
+    </style>
+    <div class="premium-form-card mx-auto" id="modal-paciente-fragmento">
+        <h2 class="premium-form-title">
+            <span style="display:inline-block; background:linear-gradient(90deg, var(--aurora1), var(--aurora2) 80%, var(--gold-light) 100%); border-radius:1.2rem; padding:0.3rem 0.7rem; box-shadow:0 2px 12px var(--aurora1); margin-right:0.4rem;">
+                <i class="fas fa-user-injured" style="color:var(--gold-premium); filter:drop-shadow(0 2px 6px var(--gold-light));"></i>
+            </span>
+            <span class="premium-title-text">{{ view.object.pk|yesno:'Editar Paciente,Nuevo Paciente' }}</span>
+        </h2>
+        {% if form.non_field_errors %}
+        <div class="premium-form-error mt-4">
+            {% for error in form.non_field_errors %}
+            <div class="flex items-center mt-0.5">
+                <i class="fa-solid fa-circle-exclamation text-xs mr-1"></i>
+                {{ error }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <form method="post" novalidate autocomplete="off" enctype="multipart/form-data" id="form-paciente-basico" action="{% url 'core:paciente_create_ajax' %}">
+            {% csrf_token %}
+            <input type="hidden" name="activo" value="True" />
+            {% for field in form %}
+                {% if field.name in 'nombres apellidos cedula_ecuatoriana telefono fecha_nacimiento sexo estado_civil direccion' %}
+                <div class="premium-form-group">
+                    <label for="{{ field.id_for_label }}" class="premium-form-label">{{ field.label }}</label>
+                    <div class="premium-input-wrapper">
+                        <i class="fas fa-pen premium-input-icon" title="Campo"></i>
+                        {{ field }}
+                    </div>
+                    {% if field.errors %}
+                        <div class="premium-form-error">{{ field.errors|striptags }}</div>
+                    {% endif %}
+                    {% if field.help_text %}
+                        <div class="premium-form-help"><i class="fas fa-circle-info"></i> {{ field.help_text }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+            <div class="flex justify-center mt-6 gap-4">
+                <button type="submit" class="premium-form-btn">
+                    <i class="fas fa-floppy-disk"></i>
+                    Guardar
+                </button>
+                <button type="button" class="premium-form-cancel" onclick="cerrarModalPaciente()">
+                    <i class="fas fa-xmark"></i>
+                    Cancelar
+                </button>
+            </div>
+        </form>
+    </div>
+    {# Si es fragmento/modal, incluir JS para AJAX #}
+    <script>
+// Envío AJAX del formulario de paciente
+const formPaciente = document.getElementById('form-paciente-basico');
+formPaciente.onsubmit = function(e) {
+    e.preventDefault();
+    const formData = new FormData(formPaciente);
+    fetch(formPaciente.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(function(data) {
+        if (data.success) {
+            // Cerrar modal y actualizar select de paciente en el formulario de cita
+            if (window.onPacienteCreado) {
+                window.onPacienteCreado(data);
+            }
+            cerrarModalPaciente();
+        } else if (data.html) {
+            // Si hay errores, reemplazar el fragmento por el nuevo HTML
+            document.getElementById('modal-paciente-fragmento').outerHTML = data.html;
+        } else {
+            alert('Error al guardar el paciente.');
+        }
+    })
+    .catch(function() {
+        alert('Error de red al guardar paciente.');
+    });
+    return false;
+};
+function cerrarModalPaciente() {
+    if (window.cerrarModalPacienteFn) window.cerrarModalPacienteFn();
+}
+    </script>
+    <script>
+    // Re-inicializa el handler tras reemplazo por errores
+    if (window.initPacienteModalForm === undefined) {
+        window.initPacienteModalForm = function() {
+            const formPaciente = document.getElementById('form-paciente-basico');
+            if (!formPaciente) return;
+            formPaciente.onsubmit = function(e) {
+                e.preventDefault();
+                const formData = new FormData(formPaciente);
+                fetch(formPaciente.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                })
+                .then(r => r.json())
+                .then(function(data) {
+                    if (data.success) {
+                        if (window.onPacienteCreado) {
+                            window.onPacienteCreado(data);
+                        }
+                        cerrarModalPaciente();
+                    } else if (data.html) {
+                        document.getElementById('modal-paciente-fragmento').outerHTML = data.html;
+                        window.initPacienteModalForm();
+                    } else {
+                        alert('Error al guardar el paciente.');
+                    }
+                })
+                .catch(function() {
+                    alert('Error de red al guardar paciente.');
+                });
+                return false;
+            };
+        };
+    }
+    window.initPacienteModalForm();
+    </script>

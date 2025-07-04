@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+{% include 'fragments/messages.html' %}
+{% include 'fragments/form_errors.html' %}
+<link rel="stylesheet" href="{% static 'forms/premium.css' %}">
+<div class="premium-form-card mx-auto">
+    <h2 class="premium-form-title">
+        <span style="display:inline-block; background:linear-gradient(90deg, var(--aurora1), var(--aurora2) 80%, var(--gold-light) 100%); border-radius:1.2rem; padding:0.3rem 0.7rem; box-shadow:0 2px 12px var(--aurora1); margin-right:0.4rem;">
+            <i class="fas fa-stethoscope" style="color:var(--gold-premium); filter:drop-shadow(0 2px 6px var(--gold-light));"></i>
+        </span>
+        <span class="premium-title-text">{{ form.instance.pk|yesno:'Editar Servicio,Nuevo Servicio' }}</span>
+    </h2>
+    <form method="post" novalidate autocomplete="off" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="premium-form-group">
+                <label for="{{ field.id_for_label }}" class="premium-form-label">{{ field.label }}</label>
+                <div class="premium-input-wrapper">
+                    <i class="fas fa-pen premium-input-icon" title="Campo"></i>
+                    {{ field }}
+                </div>
+                {% if field.errors %}
+                    <div class="premium-form-error">{{ field.errors|striptags }}</div>
+                {% endif %}
+                {% if field.help_text %}
+                    <div class="premium-form-help"><i class="fas fa-circle-info"></i> {{ field.help_text }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div class="flex justify-center mt-6 gap-4">
+            <button type="submit" class="premium-form-btn">
+                <i class="fas fa-floppy-disk"></i>
+                Guardar
+            </button>
+            <a href="{% url 'doctor:servicio_list' %}" class="premium-form-cancel">
+                <i class="fas fa-xmark"></i>
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

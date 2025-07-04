@@ -1,0 +1,108 @@
+{% extends "doctor/citas/calendario.html" %}
+{% load static %}
+
+{% block calendario_content %}
+<div class="min-h-screen p-4 lg:p-8 rounded-[2.5rem] premium-calendar-content">
+  <div class="mb-8">
+    <div class="glass-effect rounded-[2.5rem] p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+          <i class="fas fa-calendar-week text-white text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold text-white mb-1">Agenda Premium - Vista Semanal</h1>
+          <p class="text-white/80 font-medium">Semana de {{ semana_inicio|date:'d/m/Y' }} a {{ semana_fin|date:'d/m/Y' }}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="btn-anterior" class="px-6 py-3 bg-white/20 text-white rounded-2xl hover:bg-white/30 transition-all duration-200 flex items-center gap-2">
+          <i class="fas fa-chevron-left"></i> Anterior
+        </button>
+        <button id="btn-hoy" class="px-6 py-3 bg-white/20 text-white rounded-2xl hover:bg-white/30 transition-all duration-200">Esta Semana</button>
+        <button id="btn-siguiente" class="px-6 py-3 bg-white/20 text-white rounded-2xl hover:bg-white/30 transition-all duration-200 flex items-center gap-2">
+          Siguiente <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="glass-effect rounded-[2.5rem] p-6 shadow-xl border border-[#ffe066]">
+    <div class="overflow-x-auto">
+      <table class="w-full text-center">
+        <thead>
+          <tr>
+            <th class="premium-table-header text-center">Hora</th>
+            {% for dia in dias_semana %}
+              <th class="premium-table-header text-center">{{ dia.nombre }}<br><span class="text-xs text-gray-400">{{ dia.fecha|date:'d/m' }}</span></th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for fila in slots_semanales %}
+          <tr>
+            <td class="premium-cell text-center font-bold">{{ fila.0.hora }}</td>
+            {% for slot in fila %}
+              <td class="premium-cell p-2 align-top">
+                {% if slot.estado == 'disponible' and not slot.ya_pasado and not slot.cita %}
+                  <a class="slot-card slot-disponible-futuro block p-3 relative cursor-pointer"
+                     href="{% url 'doctor:cita_create' %}?fecha={{ slot.fecha|date:'Y-m-d' }}&hora={{ slot.hora|urlencode }}&next=semanal"
+                     title="Agendar cita"
+                     onclick="event.stopPropagation(); window.location.href=this.href; return false;">
+                    <div class="flex items-center gap-2">
+                      <i class="fas fa-plus text-yellow-600"></i>
+                      <span class="font-semibold">Disponible</span>
+                    </div>
+                    <div class="text-xs text-gray-600">{{ slot.hora }}</div>
+                  </a>
+                {% elif slot.cita %}
+                  {% url 'doctor:cita_update' slot.cita.id as edit_url %}
+                  {% url 'doctor:cita_delete' slot.cita.id as del_url %}
+                  <div class="slot-card slot-{{ slot.estado }} p-3 relative group">
+                    <div class="flex flex-row items-center justify-end gap-3 absolute top-2 right-2 z-10">
+                      {% if permissions.change_cita %}
+                        <a href="{{ edit_url }}?next=semanal"
+                           class="premium-button !p-2 !bg-[var(--aurora2)]/10 hover:!bg-[var(--aurora2)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--aurora2)]"
+                           title="Editar"
+                           onclick="event.stopPropagation();">
+                          <i class="fas fa-pen-to-square text-[var(--aurora1)] text-lg"></i>
+                        </a>
+                      {% endif %}
+                      {% if permissions.delete_cita %}
+                        <a href="#"
+                           class="premium-button !p-2 !bg-red-100 hover:!bg-red-200 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
+                           onclick="event.stopPropagation(); abrirModalEliminarCita('{{ del_url }}', 'Cita #{{ slot.cita.id }}'); return false;"
+                           title="Eliminar">
+                          <i class="fas fa-trash-can text-red-600 text-lg"></i>
+                        </a>
+                      {% endif %}
+                    </div>
+                    <div class="flex flex-col items-center">
+                      <div class="font-bold text-gray-900">{{ slot.cita.paciente }}</div>
+                      <div class="text-xs text-gray-600">{{ slot.hora }}</div>
+                      <span class="status-badge status-{{ slot.estado }} mt-1">
+                        {% if slot.estado == 'ocupado' %}
+                          <i class="fas fa-user-clock"></i> Ocupado
+                        {% elif slot.estado == 'atendido' %}
+                          <i class="fas fa-check-circle"></i> Atendido
+                        {% endif %}
+                      </span>
+                    </div>
+                  </div>
+                {% else %}
+                  <div class="slot-card slot-disponible p-3 relative opacity-50 cursor-not-allowed">
+                    <div class="flex items-center gap-2">
+                      <i class="fas fa-clock"></i>
+                      <span class="font-semibold">No disponible</span>
+                    </div>
+                    <div class="text-xs text-gray-400">{{ slot.hora }}</div>
+                  </div>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

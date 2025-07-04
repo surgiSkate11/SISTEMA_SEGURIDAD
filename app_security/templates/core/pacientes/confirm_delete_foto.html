@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h4>Confirmar eliminación de foto</h4>
+        </div>
+        <div class="card-body">
+            <p>¿Estás seguro de que deseas eliminar esta foto del paciente <strong>{{ object.paciente }}</strong>?</p>
+            <img src="{{ object.imagen.url }}" alt="Foto del paciente" class="img-thumbnail mb-3" style="max-width: 300px;">
+            <form method="post">{% csrf_token %}
+                <a href="{{ object.paciente.get_absolute_url|default:request.META.HTTP_REFERER }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-danger">Eliminar</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

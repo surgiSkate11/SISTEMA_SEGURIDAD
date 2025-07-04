@@ -1,0 +1,47 @@
+{% for servicio in servicios %}
+<tr class="table-row-hover">
+    <td class="premium-cell">
+        <div class="flex items-center space-x-4">
+            <div class="premium-icon-container">
+                <i class="fas fa-stethoscope"></i>
+            </div>
+            <div>
+                <div class="text-lg font-bold text-[var(--text-dark)] mb-1">{{ servicio.nombre }}</div>
+            </div>
+        </div>
+    </td>
+    <td class="premium-cell text-center">${{ servicio.precio|floatformat:2 }}</td>
+    <td class="premium-cell text-center">{{ servicio.descripcion|truncatechars:40|default:"-" }}</td>
+    <td class="premium-cell text-center">
+        <div class="flex flex-row items-center justify-center gap-6">
+            <a href="{% url 'core:servicio_update' servicio.pk %}"
+               class="premium-button !p-3 !bg-[var(--aurora2)]/10 hover:!bg-[var(--aurora2)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--aurora2)]"
+               title="Editar">
+                <i class="fas fa-pen-to-square text-[var(--aurora1)] text-xl"></i>
+            </a>
+            <a href="#"
+               class="premium-button !p-3 !bg-red-100 hover:!bg-red-200 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
+               onclick="openDeleteModal('{{ servicio.pk }}', '{{ servicio.nombre }}')"
+               title="Eliminar">
+                <i class="fas fa-trash-can text-red-600 text-xl"></i>
+            </a>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="4" class="px-8 py-8 border-b-2 border-[var(--gold-premium)] gold-gradient text-center">
+        <div class="flex flex-col items-center space-y-6">
+            <div class="premium-icon-container !w-24 !h-24 mb-4">
+                <i class="fas fa-hand-holding-medical !text-4xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-[var(--text-dark)]">
+                No hay servicios registrados
+            </h3>
+            <p class="text-[var(--text-secondary)] text-lg mb-6">
+                Comienza agregando tu primer servicio
+            </p>
+        </div>
+    </td>
+</tr>
+{% endfor %}

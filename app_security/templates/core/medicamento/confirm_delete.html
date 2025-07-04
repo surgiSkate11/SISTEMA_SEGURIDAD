@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block content %}
+    {% include 'fragments/messages.html' %}
+    <div class="flex justify-center items-center min-h-screen">
+        {% include 'fragments/delete.html' with object=object object_name="Medicamento" cancel_url=cancel_url %}
+    </div>
+{% endblock %}
