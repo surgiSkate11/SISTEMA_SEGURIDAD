@@ -61,7 +61,7 @@ class AtencionCreateView(SidebarMenuMixin, PermissionMixin, CreateViewMixin, Cre
     model = Atencion
     form_class = AtencionForm
     template_name = 'doctor/atenciones/form.html'
-    success_url = reverse_lazy('doctor:atenciones_list')
+    success_url = reverse_lazy('doctor:atencion_list')
     permission_required = 'add_atencion'
 
     def form_valid(self, form):
@@ -87,12 +87,15 @@ class AtencionCreateView(SidebarMenuMixin, PermissionMixin, CreateViewMixin, Cre
         context['grabar'] = 'Grabar Atención'
         context['back_url'] = self.success_url
         context['diagnosticos']= Diagnostico.objects.filter(activo=True)
-        context['medicamentos'] = (Medicamento.objects.filter(activo=True)
-            .select_related('tipo', 'marca_medicamento')
-            .only('id', 'nombre', 'concentracion', 'via_administracion',
-                  'precio', 'cantidad', 'tipo__nombre', 'marca_medicamento__nombre'
-                  ).order_by('nombre'))
-
+        # Serializar medicamentos como lista de dicts solo con id y nombre
+        medicamentos_qs = Medicamento.objects.filter(activo=True).order_by('nombre')
+        context['medicamentos'] = json.dumps([
+            {
+                'id': m.id,
+                'nombre': m.nombre,
+            }
+            for m in medicamentos_qs
+        ])
         context['paciente_json'] = 'null'
         context['medicamentos_json'] = '[]'  # Array vacío
         context['modo_edicion'] = False
@@ -100,8 +103,23 @@ class AtencionCreateView(SidebarMenuMixin, PermissionMixin, CreateViewMixin, Cre
 
 
     def post(self, request, *args, **kwargs):
-        # Convertir el cuerpo de la solicitud a un diccionario Python
-        data = json.loads(request.body)
+        import json
+        # Robustly handle empty or invalid JSON body
+        try:
+            if not request.body:
+                return JsonResponse({
+                    "msg": "No se recibió ningún dato. Por favor, complete el formulario y vuelva a intentarlo."
+                }, status=400)
+            data = json.loads(request.body)
+        except Exception as e:
+            return JsonResponse({
+                "msg": f"Error al procesar los datos enviados: {str(e)}"
+            }, status=400)
+
+        from applications.core.models import Doctor
+        doctor_obj = Doctor.objects.filter(activo=True).first()
+        if not doctor_obj:
+            return JsonResponse({"msg": "No hay un doctor activo registrado en el sistema."}, status=400)
 
         # Extraer los objetos anidados
         signos_vitales = data.get('signosVitales', {})
@@ -121,7 +139,6 @@ class AtencionCreateView(SidebarMenuMixin, PermissionMixin, CreateViewMixin, Cre
                 # Crear la instancia del modelo Atencion
                 atencion = Atencion.objects.create(
                     paciente_id=to_int(data.get('paciente')),
-                    doctor_id=to_int(data.get('doctor')),
                     presion_arterial=signos_vitales.get('presionArterial'),
                     pulso=to_int(signos_vitales.get('pulso')),
                     temperatura=to_decimal(signos_vitales.get('temperatura')),
@@ -182,7 +199,7 @@ class AtencionUpdateView(SidebarMenuMixin, PermissionMixin, UpdateViewMixin, Upd
     model = Atencion
     form_class = AtencionForm
     template_name = 'doctor/atenciones/form.html'
-    success_url = reverse_lazy('doctor:atenciones_list')
+    success_url = reverse_lazy('doctor:atencion_list')
     permission_required = 'change_atencion'
 
     def form_valid(self, form):
@@ -276,7 +293,6 @@ class AtencionUpdateView(SidebarMenuMixin, PermissionMixin, UpdateViewMixin, Upd
                 atencion = self.get_object()
                 # Actualizar la instancia existente de Atencion
                 atencion.paciente_id = to_int(data.get('paciente'))
-                atencion.doctor_id = to_int(data.get('doctor'))
                 atencion.presion_arterial = signos_vitales.get('presionArterial')
                 atencion.pulso = to_int(signos_vitales.get('pulso'))
                 atencion.temperatura = to_decimal(signos_vitales.get('temperatura'))
@@ -340,7 +356,7 @@ class AtencionUpdateView(SidebarMenuMixin, PermissionMixin, UpdateViewMixin, Upd
 class AtencionDeleteView(SidebarMenuMixin, PermissionMixin, DeleteViewMixin, DeleteView):
     model = Atencion
     template_name = 'doctor/atenciones/confirm_delete.html'
-    success_url = reverse_lazy('doctor:atenciones_list')
+    success_url = reverse_lazy('doctor:atencion_list')
     permission_required = 'delete_atencion'
 
     def delete(self, request, *args, **kwargs):
@@ -469,13 +485,14 @@ def imprimir_receta(request, pk):
     """
     Vista para imprimir la receta/detalle de la atención en PDF.
     """
-    atencion = Atencion.objects.select_related('paciente', 'doctor').prefetch_related('detalles__medicamento', 'diagnostico').get(pk=pk)
+    atencion = Atencion.objects.select_related('paciente').prefetch_related('detalles__medicamento', 'diagnostico').get(pk=pk)
     detalles = atencion.detalles.select_related('medicamento').all()
     diagnosticos = atencion.diagnostico.all()
     paciente = atencion.paciente
-    doctor = atencion.doctor
-
-    # Renderizar HTML de la receta
+    # Obtener el doctor: si no existe relación directa, usar el único doctor activo
+    doctor = getattr(atencion, 'doctor', None)
+    if not doctor:
+        doctor = Doctor.objects.filter(activo=True).first()
     html_string = render_to_string('doctor/atenciones/receta_pdf.html', {
         'atencion': atencion,
         'detalles': detalles,
@@ -484,7 +501,6 @@ def imprimir_receta(request, pk):
         'doctor': doctor,
         'fecha': atencion.fecha_atencion,
     })
-    # Generar PDF
     pdf_file = weasyprint.HTML(string=html_string).write_pdf()
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename=receta_atencion_{atencion.id}.pdf'

@@ -1,0 +1,138 @@
+{# Fragmento premium para modal AJAX de crear/editar cita. No extiende ningún layout, solo el formulario premium #}
+{% load static %}
+<style>
+:root {
+    --primary-blue: #2563eb;
+    --aurora1: #6366f1;
+    --aurora2: #22d3ee;
+    --aurora3: #fbbf24;
+    --btn-login: #4f8cff;
+    --btn-login-hover: #6f4fff;
+    --gold-premium: #ffd700;
+    --gold-light: #ffe066;
+    --gold-bg: #fffbe7;
+    --gold-hover: #fff7b2;
+    --gold-soft: #e6c97a;
+    --text-dark: #111827;
+    --text-secondary: #64748b;
+    --text-sidebar: #374151;
+    --bg-body: #f9fafb;
+    --bg-secondary: #e0e7ff;
+    --text-shadow: #c7d2fe44;
+    --danger: #ef4444;
+}
+.premium-form-card {
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(24px);
+    border: 2.5px solid var(--gold-premium);
+    box-shadow: 0 24px 48px -12px var(--aurora1), 0 0 0 4px var(--gold-light);
+    border-radius: 2.5rem;
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin: 0 auto;
+    max-width: 38rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInCard 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+@media (max-width: 640px) {
+    .premium-form-card {
+        padding: 1.25rem 0.5rem;
+        border-radius: 1.2rem;
+    }
+    .premium-form-title {
+        font-size: 1.5rem;
+        gap: 0.5rem;
+    }
+    .premium-form-title i {
+        font-size: 1.5rem;
+    }
+}
+</style>
+<div class="premium-form-card mx-auto">
+    <h2 class="premium-form-title">
+        <span style="display:inline-block; background:linear-gradient(90deg, var(--aurora1), var(--aurora2) 80%, var(--gold-light) 100%); border-radius:1.2rem; padding:0.3rem 0.7rem; box-shadow:0 2px 12px var(--aurora1); margin-right:0.4rem;">
+            <i class="fas fa-calendar-check" style="color:var(--gold-premium); filter:drop-shadow(0 2px 6px var(--gold-light));"></i>
+        </span>
+        <span class="premium-title-text">{{ form.instance.pk|yesno:'Editar Cita Médica,Nueva Cita Médica' }}</span>
+    </h2>
+    <form method="post" novalidate id="citaForm" autocomplete="off">
+        {% csrf_token %}
+        {% if doctor %}
+        <div class="premium-form-group">
+            <label class="premium-form-label">Cita para el Dr. {{ doctor.nombre }}</label>
+            <div class="premium-input-wrapper">
+                <i class="fas fa-user-md premium-input-icon"></i>
+                <span style="font-weight:600; color:var(--aurora1);">Usuario: {{ doctor.user.email }}</span>
+            </div>
+        </div>
+        {% endif %}
+        <div class="premium-form-group">
+            <label for="paciente-autocomplete" class="premium-form-label">Buscar paciente <span class="text-red-500">*</span></label>
+            <div class="premium-input-wrapper">
+                <i class="fas fa-user premium-input-icon"></i>
+                <input type="text" id="paciente-autocomplete" name="paciente-autocomplete" class="w-full" placeholder="🔍 Buscar paciente..." autocomplete="off">
+                <input type="hidden" id="id_paciente" name="paciente" value="{{ form.initial.paciente|default:'' }}">
+                <div id="paciente-suggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden"></div>
+            </div>
+            <button type="button" id="crear-paciente-btn" class="mt-2 premium-form-btn" style="background:var(--aurora2); color:#fff;">
+                <i class="fas fa-user-plus"></i> Crear paciente
+            </button>
+        </div>
+        {% for field in form.visible_fields %}
+            {% if field.name == 'fecha' %}
+            <div class="premium-form-group {% if field.errors %}has-error{% endif %}">
+                <label for="{{ field.id_for_label }}" class="premium-form-label">{{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                <div class="premium-input-wrapper">
+                    <i class="fas fa-calendar premium-input-icon"></i>
+                    {{ field }}
+                </div>
+                {% if field.errors %}
+                <div class="premium-form-error">{{ field.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="premium-form-group">
+                <label class="premium-form-label">Horarios de Atención:</label>
+                <div id="id_hora_cita_radios" class="min-h-[2.5rem] text-gray-600">
+                    <span class="italic text-gray-400">Seleccione una fecha para ver los horarios disponibles.</span>
+                </div>
+            </div>
+            {% elif field.name != 'paciente' and field.name != 'hora_cita' %}
+            <div class="premium-form-group {% if field.errors %}has-error{% endif %}">
+                <label for="{{ field.id_for_label }}" class="premium-form-label">{{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                <div class="premium-input-wrapper">
+                    <i class="fas fa-pen premium-input-icon"></i>
+                    {{ field }}
+                </div>
+                {% if field.errors %}
+                <div class="premium-form-error">{{ field.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endfor %}
+        <input type="hidden" id="id_hora_cita" name="hora_cita" value="{{ form.initial.hora_cita|default:'' }}" />
+        {% if form.non_field_errors %}
+        <div class="premium-form-error mt-4">
+            {% for error in form.non_field_errors %}
+            <div class="flex items-center mt-0.5">
+                <i class="fa-solid fa-circle-exclamation text-xs mr-1"></i>
+                {{ error }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="flex justify-center mt-6 gap-4">
+            <button type="submit" class="premium-form-btn">
+                <i class="fas fa-floppy-disk"></i>
+                Guardar
+            </button>
+            <button type="button" class="premium-form-cancel" onclick="window.cerrarModalCrearCitaPremium && window.cerrarModalCrearCitaPremium()">
+                <i class="fas fa-xmark"></i>
+                Cancelar
+            </button>
+        </div>
+    </form>
+</div>
+<script src="https://kit.fontawesome.com/2b8e1e1b7b.js" crossorigin="anonymous"></script>
+<script>
+// ...puedes copiar aquí los scripts de autocompletado, horarios, y modal paciente del form.html si lo necesitas...
+</script>

@@ -16,7 +16,10 @@
             {{ paciente.cedula_ecuatoriana|default:"Sin cédula" }}
         </span>
     </td>
-    <td class="premium-cell text-center">{{ paciente.genero|default:"-" }}</td>
+    <td class="premium-cell text-center">
+        {# Mostrar el display del campo sexo #}
+        {{ paciente.get_sexo_display|default:"-" }}
+    </td>
     <td class="premium-cell text-center">{{ paciente.fecha_nacimiento|date:'d/m/Y'|default:"-" }}</td>
     <td class="premium-cell text-center">
         <div class="flex flex-row items-center justify-center gap-6">

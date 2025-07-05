@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ form.instance.pk|yesno:'Editar,Registrar' }} Horario de Atención{% endblock %}
+{% block content %}
+{% include 'fragments/messages.html' %}
+{% include 'fragments/form_errors.html' %}
+<style>
+:root {
+    --primary-blue: #2563eb;
+    --aurora1: #6366f1;
+    --aurora2: #22d3ee;
+    --aurora3: #fbbf24;
+    --btn-login: #4f8cff;
+    --btn-login-hover: #6f4fff;
+    --gold-premium: #ffd700;
+    --gold-light: #ffe066;
+    --gold-bg: #fffbe7;
+    --gold-hover: #fff7b2;
+    --gold-soft: #e6c97a;
+    --text-dark: #111827;
+    --text-secondary: #64748b;
+    --text-sidebar: #374151;
+    --bg-body: #f9fafb;
+    --bg-secondary: #e0e7ff;
+    --text-shadow: #c7d2fe44;
+    --danger: #ef4444;
+}
+.premium-form-card {
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(24px);
+    border: 2.5px solid var(--gold-premium);
+    box-shadow: 0 24px 48px -12px var(--aurora1), 0 0 0 4px var(--gold-light);
+    border-radius: 2.5rem;
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
+    max-width: 38rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInCard 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+.premium-form-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    background: linear-gradient(90deg, var(--gold-premium), var(--aurora2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    justify-content: center;
+}
+.premium-form-title .premium-form-icon {
+    color: var(--gold-premium);
+    font-size: 2.5rem;
+    margin-right: 0.5rem;
+}
+.premium-form-group {
+    margin-bottom: 1.7rem;
+    position: relative;
+}
+.premium-form-label {
+    display: block;
+    font-weight: 700;
+    color: var(--aurora1);
+    margin-bottom: 0.5rem;
+    font-size: 1.13rem;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 8px var(--text-shadow);
+}
+.premium-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.premium-input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--aurora2);
+    font-size: 1.2rem;
+    pointer-events: none;
+    transition: color 0.2s;
+    z-index: 2;
+}
+.premium-form-card input,
+.premium-form-card select,
+.premium-form-card textarea {
+    width: 100%;
+    border-radius: 1rem;
+    border: 2px solid var(--gold-premium);
+    background: rgba(255,255,255,0.93);
+    padding: 0.85rem 1.25rem 0.85rem 2.7rem;
+    font-size: 1.08rem;
+    color: var(--text-dark);
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 2px 8px 0 var(--aurora1);
+    outline: none;
+    z-index: 1;
+}
+.premium-form-card input:focus,
+.premium-form-card select:focus,
+.premium-form-card textarea:focus {
+    border-color: var(--aurora1);
+    background: rgba(255,255,255,0.99);
+    box-shadow: 0 0 0 6px var(--aurora2);
+}
+.premium-form-error {
+    display: inline-block;
+    background: var(--gold-bg);
+    color: var(--danger);
+    border: 1.5px solid var(--gold-premium);
+    border-radius: 0.75rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.98rem;
+    margin-bottom: 0.5rem;
+    margin-top: 0.2rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px 0 var(--gold-light);
+    animation: fadeInError 0.5s;
+}
+.premium-form-help {
+    font-size: 0.97rem;
+    color: var(--aurora2);
+    margin-top: 0.2rem;
+    margin-left: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.premium-form-btn {
+    background: linear-gradient(135deg, var(--aurora1) 0%, var(--aurora2) 100%);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 1.2rem;
+    padding: 0.85rem 2.2rem;
+    font-size: 1.15rem;
+    box-shadow: 0 10px 15px -3px var(--primary-blue), 0 0 0 1px var(--aurora1);
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    border: 2px solid var(--gold-premium);
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.premium-form-btn:hover {
+    background: linear-gradient(135deg, var(--btn-login) 0%, var(--btn-login-hover) 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 16px 32px -8px var(--aurora1), 0 0 0 3px var(--gold-premium);
+}
+.premium-form-cancel {
+    border: 2px solid var(--gold-premium);
+    color: var(--aurora1);
+    background: var(--gold-bg);
+    border-radius: 1.2rem;
+    padding: 0.85rem 2.2rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-left: 1rem;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.premium-form-cancel:hover {
+    background: var(--gold-hover);
+    color: var(--aurora2);
+}
+@media (max-width: 600px) {
+    .premium-form-card {
+        padding: 1.2rem 0.5rem 1.5rem 0.5rem;
+        border-radius: 1.2rem;
+    }
+    .premium-form-title {
+        font-size: 1.5rem;
+    }
+}
+</style>
+<div class="flex justify-center items-center min-h-[60vh]">
+    <div class="premium-form-card w-full">
+        <div class="premium-form-title">
+            <span class="premium-form-icon">
+                <i class="fas fa-clock"></i>
+            </span>
+            {{ form.instance.pk|yesno:'Editar,Registrar' }} Horario de Atención
+        </div>
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="premium-form-group">
+                    <label for="{{ field.id_for_label }}" class="premium-form-label">{{ field.label }}{% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                    <div class="premium-input-wrapper">
+                        {% if field.name == "dia_semana" %}
+                            <i class="fas fa-calendar-day premium-input-icon"></i>
+                        {% elif field.name == "hora_inicio" %}
+                            <i class="fas fa-clock premium-input-icon"></i>
+                        {% elif field.name == "hora_fin" %}
+                            <i class="fas fa-clock premium-input-icon"></i>
+                        {% elif field.name == "intervalo_desde" or field.name == "intervalo_hasta" %}
+                            <i class="fas fa-utensils premium-input-icon"></i>
+                        {% endif %}
+                        {{ field|safe }}
+                    </div>
+                    {% if field.help_text %}
+                        <div class="premium-form-help"><i class="fas fa-circle-info"></i> {{ field.help_text }}</div>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="premium-form-error">{{ field.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <div class="flex justify-center mt-6 gap-4">
+                <button type="submit" class="premium-form-btn">
+                    <i class="fas fa-floppy-disk"></i>
+                    Guardar
+                </button>
+                <a href="{% url 'doctor:horario_list' %}" class="premium-form-cancel">
+                    <i class="fas fa-xmark"></i>
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

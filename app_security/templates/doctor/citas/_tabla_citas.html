@@ -24,6 +24,11 @@
                title="Eliminar">
                 <i class="fas fa-trash-can text-red-600 text-xl"></i>
             </a>
+            <a href="{% url 'doctor:atencion_create' %}?cita_id={{ cita.id }}"
+               class="premium-button !p-3 !bg-[var(--gold-premium)]/10 hover:!bg-[var(--gold-premium)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--gold-premium)]"
+               title="Crear atención para esta cita">
+                <i class="fas fa-stethoscope text-[var(--gold-premium)] text-xl"></i>
+            </a>
         </div>
     </td>
 </tr>
@@ -44,3 +49,4 @@
     </td>
 </tr>
 {% endfor %}
+

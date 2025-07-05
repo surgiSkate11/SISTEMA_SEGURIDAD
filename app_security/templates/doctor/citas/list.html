@@ -32,6 +32,8 @@
 <div class="max-w-6xl mx-auto px-6 py-6 -mt-1 relative z-20">
     <div class="premium-card rounded-2xl p-6 mb-8 bg-gradient-to-r from-white to-slate-50/80">
         <form method="get" class="w-full" id="filtros-form" action="#tabla-citas-body">
+            
+
             <div class="w-full flex flex-col lg:flex-row lg:items-center lg:justify-between lg:flex-nowrap gap-4 flex-wrap">
                 <div class="w-full lg:w-auto flex items-center gap-2">
                     <span class="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-[var(--aurora1)] to-[var(--aurora2)] shadow-lg ml-2">
@@ -45,6 +47,7 @@
                         class="w-full lg:w-auto lg:max-w-md pl-4 pr-12 h-12 bg-white/90 border-2 border-slate-200 rounded-xl text-base font-normal text-slate-700 focus:border-[var(--aurora1)] focus:ring-2 focus:ring-[var(--aurora2)]/20 transition-all duration-300 outline-none shadow-md hover:shadow-lg placeholder:text-slate-400 placeholder:font-normal backdrop-blur-sm relative z-10 premium-search-input"
                     >
                 </div>
+    
             </div>
         </form>
     </div>
@@ -99,5 +102,62 @@
         {% endif %}
     </div>
 </div>
+
 {% include 'fragments/search_table_ajax.html' %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filtrosForm = document.getElementById('filtros-form');
+    const tablaCitas = document.getElementById('tabla-citas-body');
+    const searchInput = document.querySelector('input[name="q"]');
+
+    function scrollToTabla() {
+        if (tablaCitas) {
+            tablaCitas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function submitAjax() {
+        const formData = new FormData(filtrosForm);
+        const params = new URLSearchParams(formData).toString();
+        fetch(window.location.pathname + '?' + params, {
+            headers: { 'x-requested-with': 'XMLHttpRequest' }
+        })
+        .then(r => r.text())
+        .then(html => {
+            tablaCitas.innerHTML = html;
+            scrollToTabla();
+        });
+    }
+
+    const yearSelect = document.getElementById('year-select');
+    const monthSelect = document.getElementById('month-select');
+    if (yearSelect && monthSelect) {
+        yearSelect.addEventListener('change', function() {
+            submitAjax();
+        });
+        monthSelect.addEventListener('change', function() {
+            submitAjax();
+        });
+    }
+    if (searchInput) {
+        let lastValue = searchInput.value;
+        let timeout = null;
+        searchInput.addEventListener('input', function() {
+            const value = this.value;
+            if (timeout) clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                if (value === lastValue) return;
+                lastValue = value;
+                submitAjax();
+            }, 400);
+        });
+    }
+    // Scroll suave al hacer clic en paginación
+    document.querySelectorAll('a[href*="#tabla-citas-body"]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            setTimeout(scrollToTabla, 200);
+        });
+    });
+});
+</script>
 {% endblock %}

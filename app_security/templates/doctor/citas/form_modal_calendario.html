@@ -1,0 +1,371 @@
+{# Fragmento premium para modal AJAX de crear/editar cita, solo para vistas de calendario. No extiende ningún layout, solo el formulario premium #}
+{% load static %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+:root {
+    --primary-blue: #2563eb;
+    --aurora1: #6366f1;
+    --aurora2: #22d3ee;
+    --aurora3: #fbbf24;
+    --btn-login: #4f8cff;
+    --btn-login-hover: #6f4fff;
+    --gold-premium: #ffd700;
+    --gold-light: #ffe066;
+    --gold-bg: #fffbe7;
+    --gold-hover: #fff7b2;
+    --gold-soft: #e6c97a;
+    --text-dark: #111827;
+    --text-secondary: #64748b;
+    --text-sidebar: #374151;
+    --bg-body: #f9fafb;
+    --bg-secondary: #e0e7ff;
+    --text-shadow: #c7d2fe44;
+    --danger: #ef4444;
+}
+.modal-premium-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    background: rgba(30, 41, 59, 0.25);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 0;
+    animation: fadeInOverlay 0.3s;
+}
+@keyframes fadeInOverlay {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+.modal-premium-content {
+    width: 100vw;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+.premium-form-card {
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(24px);
+    border: 2.5px solid var(--gold-premium);
+    box-shadow: 0 16px 48px 0 var(--aurora1), 0 0 0 4px var(--gold-light);
+    border-radius: 2.5rem;
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+    margin: 2.5rem auto;
+    max-width: 32rem;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    animation: fadeInCard 0.8s cubic-bezier(0.4,0,0.2,1);
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    pointer-events: all;
+}
+.premium-form-title {
+    font-size: 2.1rem;
+    font-weight: 800;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    letter-spacing: 0.03em;
+    animation: fadeInTitle 1.2s cubic-bezier(0.4,0,0.2,1);
+    justify-content: center;
+    text-align: center;
+}
+.premium-form-title .premium-title-text {
+    background: linear-gradient(90deg, var(--aurora1), var(--aurora2), var(--gold-premium));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.premium-form-title i {
+    color: var(--gold-premium);
+    font-size: 2.7rem;
+    filter: drop-shadow(0 2px 4px var(--gold-soft));
+}
+@keyframes fadeInCard {
+    0% { opacity: 0; transform: translateY(40px) scale(0.98); }
+    100% { opacity: 1; transform: none; }
+}
+@keyframes fadeInTitle {
+    0% { opacity: 0; transform: translateY(-30px); }
+    100% { opacity: 1; transform: none; }
+}
+.premium-form-group {
+    margin-bottom: 0.7rem;
+    position: relative;
+}
+.premium-form-label {
+    display: block;
+    font-weight: 700;
+    color: var(--aurora1);
+    margin-bottom: 0.5rem;
+    font-size: 1.13rem;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 8px var(--text-shadow);
+}
+.premium-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.premium-input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--aurora2);
+    font-size: 1.2rem;
+    pointer-events: none;
+    transition: color 0.2s;
+    z-index: 2;
+}
+.premium-form-card input,
+.premium-form-card select,
+.premium-form-card textarea {
+    width: 100%;
+    border-radius: 1rem;
+    border: 2px solid var(--gold-premium);
+    background: rgba(255,255,255,0.93);
+    padding: 0.85rem 1.25rem 0.85rem 2.7rem;
+    font-size: 1.08rem;
+    color: var(--text-dark);
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 2px 8px 0 var(--aurora1);
+    outline: none;
+    z-index: 1;
+}
+.premium-form-card input:focus,
+.premium-form-card select:focus,
+.premium-form-card textarea:focus {
+    border-color: var(--aurora1);
+    background: rgba(255,255,255,0.99);
+    box-shadow: 0 0 0 6px var(--aurora2);
+}
+.premium-form-error {
+    display: inline-block;
+    background: var(--gold-bg);
+    color: var(--danger);
+    border: 1.5px solid var(--gold-premium);
+    border-radius: 0.75rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.98rem;
+    margin-bottom: 0.5rem;
+    margin-top: 0.2rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px 0 var(--gold-light);
+    animation: fadeInError 0.5s;
+}
+@keyframes fadeInError {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: none; }
+}
+.premium-form-btn {
+    background: linear-gradient(135deg, var(--aurora1) 0%, var(--aurora2) 100%);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 1.2rem;
+    padding: 0.85rem 2.2rem;
+    font-size: 1.15rem;
+    box-shadow: 0 10px 15px -3px var(--primary-blue), 0 0 0 1px var(--aurora1);
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    border: 2px solid var(--gold-premium);
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.premium-form-btn:hover {
+    background: linear-gradient(135deg, var(--btn-login) 0%, var(--btn-login-hover) 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 16px 32px -8px var(--aurora1), 0 0 0 3px var(--gold-premium);
+}
+.premium-form-cancel {
+    border: 2px solid var(--gold-premium);
+    color: var(--aurora1);
+    background: var(--gold-bg);
+    border-radius: 1.2rem;
+    padding: 0.85rem 2.2rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-left: 1rem;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.premium-form-cancel:hover {
+    background: var(--gold-hover);
+    color: var(--aurora2);
+}
+.premium-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    background: var(--gold-bg);
+    border: 2px solid var(--gold-premium);
+    border-radius: 1.1rem;
+    padding: 0.5rem 1.2rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 1.08rem;
+    box-shadow: 0 2px 8px 0 var(--aurora1);
+    cursor: pointer;
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.premium-checkbox input[type=checkbox] {
+    accent-color: var(--aurora1);
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-right: 0.5rem;
+}
+.premium-checkbox .fa-clock {
+    color: var(--aurora2);
+    font-size: 1.2rem;
+    margin-right: 0.3rem;
+}
+.premium-checkbox input[type=checkbox]:focus + span {
+    outline: 2px solid var(--aurora2);
+    outline-offset: 2px;
+}
+@media (max-width: 640px) {
+    .modal-premium-content {
+        max-width: 100vw;
+        padding: 0;
+    }
+    .premium-form-card {
+        padding: 1rem 0.3rem;
+        border-radius: 1.2rem;
+        margin: 1.2rem auto;
+        gap: 0.5rem;
+        max-width: 98vw;
+        max-height: 96vh;
+    }
+    .premium-form-title {
+        font-size: 1.2rem;
+        gap: 0.4rem;
+    }
+    .premium-form-title i {
+        font-size: 1.2rem;
+    }
+}
+</style>
+<div class="modal-premium-overlay">
+  <div class="modal-premium-content">
+    <div class="premium-form-card mx-auto">
+      <h2 class="premium-form-title">
+        <span style="display:inline-block; background:linear-gradient(90deg, var(--aurora1), var(--aurora2) 80%, var(--gold-light) 100%); border-radius:1.2rem; padding:0.3rem 0.7rem; box-shadow:0 2px 12px var(--aurora1); margin-right:0.4rem;">
+            <i class="fas fa-calendar-check" style="color:var(--gold-premium); filter:drop-shadow(0 2px 6px var(--gold-light));"></i>
+        </span>
+        <span class="premium-title-text">{{ form.instance.pk|yesno:'Editar Cita Médica,Nueva Cita Médica' }}</span>
+      </h2>
+      <form method="post" novalidate id="citaForm" autocomplete="off">
+        {% csrf_token %}
+        <div class="premium-form-group">
+            <label for="paciente-autocomplete" class="premium-form-label">Buscar paciente <span class="text-red-500">*</span></label>
+            <div class="premium-input-wrapper">
+                <i class="fas fa-user premium-input-icon"></i>
+                <input type="text" id="paciente-autocomplete" name="paciente-autocomplete" class="w-full" placeholder="🔍 Buscar paciente..." autocomplete="off">
+                <input type="hidden" id="id_paciente" name="paciente" value="{{ form.initial.paciente|default:'' }}">
+                <div id="paciente-suggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden"></div>
+            </div>
+        </div>
+        {% for field in form.visible_fields %}
+            {% if field.name == 'fecha' or field.name == 'hora_cita' %}
+                <input type="hidden" name="{{ field.name }}" id="id_{{ field.name }}" value="{{ field.value|default:form.initial.fecha|default:request.GET.fecha }}">
+            {% elif field.name != 'paciente' %}
+                <div class="premium-form-group {% if field.errors %}has-error{% endif %}">
+                    <label for="{{ field.id_for_label }}" class="premium-form-label">{{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                    <div class="premium-input-wrapper">
+                        <i class="fas fa-pen premium-input-icon"></i>
+                        {{ field }}
+                    </div>
+                    {% if field.errors %}
+                    <div class="premium-form-error">{{ field.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+        {% if form.non_field_errors %}
+        <div class="premium-form-error mt-4">
+            {% for error in form.non_field_errors %}
+            <div class="flex items-center mt-0.5">
+                <i class="fa-solid fa-circle-exclamation text-xs mr-1"></i>
+                {{ error }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="flex justify-center mt-6 gap-4">
+            <button type="submit" class="premium-form-btn">
+                <i class="fas fa-floppy-disk"></i>
+                Guardar
+            </button>
+            <button type="button" class="premium-form-cancel" onclick="window.cerrarModalCrearCitaPremium && window.cerrarModalCrearCitaPremium()">
+                <i class="fas fa-xmark"></i>
+                Cancelar
+            </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function initPacienteAutocompletePremium() {
+    const pacienteInput = document.getElementById('paciente-autocomplete');
+    const pacienteHidden = document.getElementById('id_paciente');
+    const suggestionsBox = document.getElementById('paciente-suggestions');
+    let debounceTimeout = null;
+    if (!pacienteInput || !pacienteHidden || !suggestionsBox) return;
+    pacienteInput.addEventListener('input', function() {
+        const q = this.value.trim();
+        if (q.length < 3) {
+            suggestionsBox.classList.add('hidden');
+            return;
+        }
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(() => {
+            fetch('/core/paciente_find/?q=' + encodeURIComponent(q))
+                .then(r => r.json())
+                .then(data => {
+                    if (data.pacientes && data.pacientes.length > 0) {
+                        suggestionsBox.innerHTML = data.pacientes.map(p =>
+                            `<div class='px-4 py-2 hover:bg-blue-100 cursor-pointer' data-id='${p.id}' data-nombre='${p.nombres} ${p.apellidos}'>
+                                <span class='font-semibold'>${p.nombres} ${p.apellidos}</span> <span class='text-xs text-gray-500'>${p.cedula || p.dni || ''}</span>
+                            </div>`
+                        ).join('');
+                        suggestionsBox.classList.remove('hidden');
+                    } else {
+                        suggestionsBox.innerHTML = `<div class='px-4 py-2 text-gray-500'>No se encontraron pacientes</div>`;
+                        suggestionsBox.classList.remove('hidden');
+                    }
+                });
+        }, 250);
+    });
+    suggestionsBox.addEventListener('click', function(e) {
+        const el = e.target.closest('[data-id]');
+        if (el) {
+            pacienteInput.value = el.getAttribute('data-nombre');
+            pacienteHidden.value = el.getAttribute('data-id');
+            suggestionsBox.classList.add('hidden');
+        }
+    });
+    document.addEventListener('click', function docClick(e) {
+        if (!suggestionsBox.contains(e.target) && e.target !== pacienteInput) {
+            suggestionsBox.classList.add('hidden');
+            document.removeEventListener('click', docClick);
+        }
+    });
+}
+// Llama a la función después de renderizar el modal
+setTimeout(initPacienteAutocompletePremium, 200);
+window.UNICO_DOCTOR_ID = '{{ doctor_id|default:"null" }}';
+</script>

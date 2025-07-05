@@ -191,13 +191,17 @@ class PacienteCreateView(SidebarMenuMixin, PermissionMixin, CreateViewMixin, Cre
     model = Paciente
     form_class = PacienteForm
     template_name = 'core/pacientes/form.html'
-    success_url = reverse_lazy('core:pacientes_list')
+    success_url = reverse_lazy('core:paciente_list')
     permission_required = 'add_paciente'
 
     def form_valid(self, form):
         response = super().form_valid(form)
         registrar_auditoria(self.request, 'Paciente', self.object.id, 'CREAR')
-        messages.success(self.request, f"Paciente '{self.object.nombre}' creado exitosamente.")
+        # Check for popup parameter
+        if self.request.GET.get('popup') == '1' or self.request.POST.get('popup') == '1':
+            from django.shortcuts import render
+            return render(self.request, 'core/pacientes/paciente_created_popup.html', {'paciente': self.object})
+        messages.success(self.request, f"Paciente '{self.object.nombres} {self.object.apellidos}' creado exitosamente.")
         return response
 
     def form_invalid(self, form):
@@ -209,13 +213,13 @@ class PacienteUpdateView(SidebarMenuMixin, PermissionMixin, UpdateViewMixin, Upd
     model = Paciente
     form_class = PacienteForm
     template_name = 'core/pacientes/form.html'
-    success_url = reverse_lazy('core:pacientes_list')
+    success_url = reverse_lazy('core:paciente_list')
     permission_required = 'change_paciente'
 
     def form_valid(self, form):
         response = super().form_valid(form)
         registrar_auditoria(self.request, 'Paciente', self.object.id, 'EDITAR')
-        messages.success(self.request, f"Paciente '{self.object.nombre}' actualizado exitosamente.")
+        messages.success(self.request, f"Paciente '{self.object.nombres} {self.object.apellidos}' actualizado exitosamente.")
         return response
 
     def form_invalid(self, form):

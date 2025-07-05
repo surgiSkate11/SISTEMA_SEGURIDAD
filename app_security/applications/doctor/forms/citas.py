@@ -9,13 +9,13 @@ class CitaMedicaForm(forms.ModelForm):
     class Meta:
         model = CitaMedica
         # Excluir el campo doctor, ya que es global
-        exclude = ['doctor']
+        exclude = []  # No hay campo doctor en el modelo
         widgets = {
             'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-input', 'autocomplete': 'off', 'id': 'id_fecha'}),
         }
 
     def __init__(self, *args, **kwargs):
-        doctor = kwargs.pop('doctor', None)
+        # doctor = kwargs.pop('doctor', None)  # Ya no se usa
         super().__init__(*args, **kwargs)
         self.fields['paciente'].queryset = Paciente.active_patient.all()
         self.fields['hora_cita'].widget = forms.HiddenInput()
@@ -23,7 +23,7 @@ class CitaMedicaForm(forms.ModelForm):
         fecha = self.data.get('fecha') or self.initial.get('fecha')
         hora_enviado = self.data.get('hora_cita')
 
-        if fecha and doctor:
+        if fecha:
             import datetime
             try:
                 if isinstance(fecha, str):
@@ -32,9 +32,10 @@ class CitaMedicaForm(forms.ModelForm):
                 fecha = None
 
             if fecha:
-                citas_ocupadas = CitaMedica.objects.filter(fecha=fecha, doctor=doctor).values_list('hora_cita', flat=True)
-                intervalo = getattr(doctor, 'duracion_atencion', 30)
-                horas = obtener_horarios_disponibles_para_fecha(doctor, fecha, list(citas_ocupadas), intervalo)
+                citas_ocupadas = CitaMedica.objects.filter(fecha=fecha).values_list('hora_cita', flat=True)
+                # El intervalo lo puedes dejar fijo o configurable si quieres
+                intervalo = 30
+                horas = obtener_horarios_disponibles_para_fecha(None, fecha, list(citas_ocupadas), intervalo)
                 choices = [(h.strftime('%H:%M'), h.strftime('%H:%M')) for h in horas]
 
                 if hora_enviado and hora_enviado not in dict(choices):

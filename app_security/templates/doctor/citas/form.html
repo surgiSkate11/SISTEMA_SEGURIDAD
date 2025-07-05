@@ -265,9 +265,11 @@
                 <input type="hidden" id="id_paciente" name="paciente" value="{{ form.initial.paciente|default:'' }}">
                 <div id="paciente-suggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden"></div>
             </div>
+            <!-- Botón para abrir el modal premium de paciente -->
             <button type="button" id="crear-paciente-btn" class="mt-2 premium-form-btn" style="background:var(--aurora2); color:#fff;">
                 <i class="fas fa-user-plus"></i> Crear paciente
             </button>
+            <!-- Modal premium para crear paciente (solo se crea dinámicamente por JS) -->
         </div>
         {% for field in form.visible_fields %}
             {% if field.name == 'fecha' %}
@@ -397,8 +399,17 @@ document.addEventListener('click', function(e) {
         suggestionsBox.classList.add('hidden');
     }
 });
-document.getElementById('crear-paciente-btn').onclick = function() {
-    window.open('/core/pacientes/nuevo/', '_blank');
+document.getElementById('crear-paciente-btn').onclick = function(e) {
+    e.preventDefault();
+    const win = window.open('/core/pacientes/nuevo/?popup=1', 'CrearPaciente', 'width=800,height=600');
+    window.addEventListener('message', function (event) {
+        if (event.origin !== window.location.origin) return;
+        const paciente = event.data;
+        if (paciente && paciente.id && paciente.nombres) {
+            document.getElementById('paciente-autocomplete').value = `${paciente.nombres} ${paciente.apellidos}`;
+            document.getElementById('id_paciente').value = paciente.id;
+        }
+    }, { once: true });
 };
 // --- Horarios dinámicos AJAX ---
 function renderHorariosRadios(horarios) {

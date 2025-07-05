@@ -45,14 +45,52 @@ class CitaListView(SidebarMenuMixin, PermissionMixin, ListViewMixin, ListView):
     def get_queryset(self):
         queryset = super().get_queryset()
         search = self.request.GET.get('q') or self.request.GET.get('search', '')
+        mes = self.request.GET.get('mes')
+        anio = self.request.GET.get('anio')
         if search:
             queryset = queryset.filter(
                 Q(paciente__nombre__icontains=search) |
                 Q(fecha__icontains=search)
             )
+        if mes and mes.isdigit():
+            queryset = queryset.filter(fecha__month=int(mes))
+        if anio and anio.isdigit():
+            queryset = queryset.filter(fecha__year=int(anio))
         return queryset
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Obtener todos los años y meses de todas las citas (sin filtrar por usuario ni doctor)
+        years = CitaMedica.objects.dates('fecha', 'year', order='DESC')
+        context['available_years'] = sorted(set([d.year for d in years]))
+        # Obtener meses únicos de todas las citas
+        months = CitaMedica.objects.dates('fecha', 'month', order='ASC')
+        meses_unicos = sorted(set((d.month for d in months)))
+        # Lista de tuplas (num, nombre) solo para los meses que existen en la BD
+        meses_nombres = [
+            (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'), (4, 'Abril'),
+            (5, 'Mayo'), (6, 'Junio'), (7, 'Julio'), (8, 'Agosto'),
+            (9, 'Septiembre'), (10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
+        ]
+        context['meses'] = [(num, nombre) for num, nombre in meses_nombres if num in meses_unicos]
+        # Mes y año seleccionados
+        selected_year = self.request.GET.get('anio')
+        selected_month = self.request.GET.get('mes')
+        hoy = timezone.now().date()
+        if not selected_year:
+            selected_year = str(hoy.year)
+        if not selected_month:
+            selected_month = str(hoy.month)
+        context['selected_year'] = int(selected_year)
+        context['selected_month'] = int(selected_month)
+        # Debug en template
+        context['debug_available_years'] = context['available_years']
+        context['debug_meses'] = context['meses']
+        return context
+
     def render_to_response(self, context, **response_kwargs):
+        from django.contrib.messages import get_messages
+        context['messages'] = get_messages(self.request)
         if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
             from django.template.loader import render_to_string
             html = render_to_string('doctor/citas/_tabla_citas.html', context, request=self.request)
@@ -117,6 +155,8 @@ class CitaUpdateView(SidebarMenuMixin, PermissionMixin, UpdateViewMixin, UpdateV
             return reverse('doctor:calendario_mensual')
         elif next_view == 'list':
             return reverse('doctor:cita_list')
+        # Valor por defecto seguro
+        return reverse('doctor:calendario_diario')
         
 
 class CitaDeleteView(SidebarMenuMixin, PermissionMixin, DeleteViewMixin, DeleteView):
@@ -136,6 +176,11 @@ class CitaDeleteView(SidebarMenuMixin, PermissionMixin, DeleteViewMixin, DeleteV
         except Exception as e:
             messages.error(request, f"Error al eliminar la cita: {e}")
             return self.render_to_response(self.get_context_data(object=self.object))
+
+    def render_to_response(self, context, **response_kwargs):
+        from django.contrib.messages import get_messages
+        context['messages'] = get_messages(self.request)
+        return super().render_to_response(context, **response_kwargs)
 
     def get_success_url(self):
         next_view = self.request.GET.get('next') or self.request.POST.get('next') or self.request.GET.get('view')
@@ -171,6 +216,8 @@ class CitaMedicaListView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequire
         return queryset.order_by('-fecha', '-hora_cita')
 
     def render_to_response(self, context, **response_kwargs):
+        from django.contrib.messages import get_messages
+        context['messages'] = get_messages(self.request)
         if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
             html = render_to_string('doctor/citas/_tabla_citas.html', context, request=self.request)
             return HttpResponse(html)
@@ -184,8 +231,6 @@ class CitaMedicaCreateView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequi
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        # Pasar el doctor logueado al form
-        kwargs['doctor'] = get_unique_doctor()
         # Preseleccionar fecha si viene por GET
         fecha = self.request.GET.get('fecha')
         if fecha:
@@ -209,7 +254,8 @@ class CitaMedicaCreateView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequi
             return reverse('doctor:calendario_mensual')
         elif next_view == 'list':
             return reverse('doctor:cita_list')
-        
+        # Valor por defecto seguro
+        return reverse('doctor:cita_list')
 
     def form_valid(self, form):
         # Asignar el doctor logueado
@@ -227,6 +273,11 @@ class CitaMedicaCreateView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequi
         messages.error(self.request, "Por favor corrige los errores en el formulario.")
         return super().form_invalid(form)
 
+    def render_to_response(self, context, **response_kwargs):
+        from django.contrib.messages import get_messages
+        context['messages'] = get_messages(self.request)
+        return super().render_to_response(context, **response_kwargs)
+
 class CitaMedicaUpdateView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = CitaMedica
     form_class = CitaMedicaForm
@@ -240,7 +291,6 @@ class CitaMedicaUpdateView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequi
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['doctor'] = get_unique_doctor()
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -259,7 +309,8 @@ class CitaMedicaUpdateView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequi
             return reverse('doctor:calendario_mensual')
         elif next_view == 'list':
             return reverse('doctor:cita_list')
-        
+        # Valor por defecto seguro
+        return reverse('doctor:cita_list')
 
     def form_valid(self, form):
         # Asegurar que la cita siga perteneciendo al doctor logueado
@@ -271,6 +322,11 @@ class CitaMedicaUpdateView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequi
     def form_invalid(self, form):
         messages.error(self.request, "Por favor corrige los errores en el formulario.")
         return super().form_invalid(form)
+
+    def render_to_response(self, context, **response_kwargs):
+        from django.contrib.messages import get_messages
+        context['messages'] = get_messages(self.request)
+        return super().render_to_response(context, **response_kwargs)
 
 class CitaMedicaDeleteView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = CitaMedica
@@ -300,6 +356,11 @@ class CitaMedicaDeleteView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequi
         messages.success(request, "Cita médica eliminada correctamente.")
         return redirect(self.get_success_url())
 
+    def render_to_response(self, context, **response_kwargs):
+        from django.contrib.messages import get_messages
+        context['messages'] = get_messages(self.request)
+        return super().render_to_response(context, **response_kwargs)
+
 class CalendarioContenedorView(SidebarMenuMixin, TemplateView):
     template_name = 'doctor/citas/calendario.html'
     def dispatch(self, request, *args, **kwargs):
@@ -310,6 +371,9 @@ class CalendarioMensualView(SidebarMenuMixin, TemplateView):
     template_name = 'doctor/citas/calendario_mensual.html'
 
     def get_context_data(self, **kwargs):
+        import calendar
+        from datetime import date
+        from django.utils import timezone
         context = super().get_context_data(**kwargs)
         hoy = timezone.localdate()
         mes = int(self.request.GET.get('mes', hoy.month))
@@ -324,10 +388,15 @@ class CalendarioMensualView(SidebarMenuMixin, TemplateView):
                 citas_por_dia[d] = []
             citas_por_dia[d].append(cita)
         ESTADO_COLOR = {
-            'pendiente': 'bg-yellow-500 text-white',
-            'completada': 'bg-green-500 text-white',
-            'cancelada': 'bg-red-500 text-white',
+            'atendido': 'bg-green-500 text-white',
+            'ocupado': 'bg-red-500 text-white',
+            'disponible': 'bg-yellow-400 text-white',
         }
+        meses = [
+            (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'), (4, 'Abril'), (5, 'Mayo'), (6, 'Junio'),
+            (7, 'Julio'), (8, 'Agosto'), (9, 'Septiembre'), (10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
+        ]
+        anios = list(range(hoy.year-5, hoy.year+2))
         primer_semana, _ = calendar.monthrange(anio, mes)
         dias_del_mes = []
         for _ in range((primer_semana + 6) % 7):
@@ -340,7 +409,7 @@ class CalendarioMensualView(SidebarMenuMixin, TemplateView):
             if tiene_citas:
                 estados = [c.estado for c in citas_dia]
                 estado_predominante = max(set(estados), key=estados.count)
-            color = ESTADO_COLOR.get(estado_predominante, 'bg-blue-500 text-white') if tiene_citas else 'bg-gray-300 text-gray-600'
+            color = ESTADO_COLOR.get(estado_predominante, 'bg-white text-gray-700') if tiene_citas else 'bg-white text-gray-700'
             citas_info = [
                 {
                     'id': c.id,
@@ -361,10 +430,12 @@ class CalendarioMensualView(SidebarMenuMixin, TemplateView):
         while len(dias_del_mes) % 7 != 0 or len(dias_del_mes) < 35:
             dias_del_mes.append({'numero': '', 'es_hoy': False, 'tiene_citas': False, 'citas': [], 'color': ''})
         context.update({
-            'mes_actual': primer_dia.strftime('%B').capitalize(),
+            'mes_actual': meses[mes-1][1],
             'mes_actual_num': mes,
             'anio_actual': anio,
             'dias_mes': dias_del_mes,
+            'meses': meses,
+            'anios': anios,
         })
         return context
 
@@ -593,6 +664,15 @@ class CalendarioDiarioView(SidebarMenuMixin, TemplateView):
             'porcentaje_ocupadas': porcentaje_ocupadas,
             'porcentaje_atendidas': porcentaje_atendidas,
         })
+        # --- PREMIUM: Agregar permisos y menú premium al contexto (igual que los mixins) ---
+        from applications.security.components.menu_module import MenuModule
+        from applications.security.components.group_session import UserGroupSession
+        from applications.security.components.group_permission import GroupPermission
+        MenuModule(self.request).fill(context)
+        userGroupSession = UserGroupSession(self.request)
+        group = userGroupSession.get_group_session() if self.request.user.is_authenticated else None
+        context['permissions'] = GroupPermission.get_permission_dict_of_group(self.request.user, group) if group else {}
+        # -------------------------------------------------------------------------------
         return context
 
 def calendario_diario(request):
@@ -695,6 +775,15 @@ def calendario_diario(request):
         'porcentaje_ocupadas': porcentaje_ocupadas,
         'porcentaje_atendidas': porcentaje_atendidas,
     }
+    # --- PREMIUM: Agregar permisos y menú premium al contexto (igual que los mixins) ---
+    from applications.security.components.menu_module import MenuModule
+    from applications.security.components.group_session import UserGroupSession
+    from applications.security.components.group_permission import GroupPermission
+    MenuModule(request).fill(context)
+    userGroupSession = UserGroupSession(request)
+    group = userGroupSession.get_group_session() if request.user.is_authenticated else None
+    context['permissions'] = GroupPermission.get_permission_dict_of_group(request.user, group) if group else {}
+    # -------------------------------------------------------------------------------
     return render(request, 'doctor/citas/calendario_diario.html', context)
 
 @require_GET
@@ -803,9 +892,8 @@ def detalle_cita_ajax(request, cita_id):
 @require_http_methods(["GET", "POST"])
 def calendario_crear_cita(request):
     if request.method == "GET":
-        # Solo responder a AJAX
-        if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return HttpResponseBadRequest("Solo peticiones AJAX permitidas")
+        # Permitir tanto AJAX como ?ajax=1
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1'
         hora = request.GET.get('hora')
         fecha = request.GET.get('fecha')
         if not hora or not fecha:
@@ -813,9 +901,12 @@ def calendario_crear_cita(request):
         # Prellenar el form con hora y fecha
         initial = {'hora_cita': hora, 'fecha': fecha}
         form = CitaMedicaForm(initial=initial)
-        context = {'form': form, 'request': request}
-        html = render_to_string('fragments/crear_cita.html', context, request=request)
-        return HttpResponse(html)
+        context = {'form': form, 'request': request, 'doctor': getattr(request.user, 'doctor', None), 'doctor_id': getattr(getattr(request.user, 'doctor', None), 'id', None)}
+        if is_ajax:
+            html = render_to_string('doctor/citas/form_modal_calendario.html', context, request=request)
+            return HttpResponse(html)
+        else:
+            return render(request, 'doctor/citas/form.html', context)
     elif request.method == "POST":
         form = CitaMedicaForm(request.POST)
         if form.is_valid():
@@ -832,7 +923,8 @@ def calendario_crear_cita(request):
             cita.save()
             return JsonResponse({'success': True})
         else:
-            html = render_to_string('fragments/crear_cita.html', {'form': form, 'request': request}, request=request)
+            context = {'form': form, 'request': request, 'doctor': getattr(request.user, 'doctor', None), 'doctor_id': getattr(getattr(request.user, 'doctor', None), 'id', None)}
+            html = render_to_string('doctor/citas/form_modal_calendario.html', context, request=request)
             return JsonResponse({'success': False, 'html': html})
 
 

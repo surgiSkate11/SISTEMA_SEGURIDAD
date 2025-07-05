@@ -1,0 +1,52 @@
+<!-- Modal premium para crear paciente (fragmento AJAX) -->
+<div class="modal fade" id="modalCrearPaciente" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content premium-form-card">
+      <div class="modal-header" style="border-bottom:1.5px solid var(--gold-premium);">
+        <h5 class="modal-title premium-form-title"><i class="fas fa-user-plus"></i> Nuevo Paciente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body" id="modalPacienteFormContainer">
+        <!-- Aquí se cargará el formulario por AJAX -->
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// Cargar el formulario al abrir el modal
+$('#modalCrearPaciente').on('show.bs.modal', function () {
+  $.ajax({
+    url: '/core/pacientes/nuevo/ajax/?ajax=1',
+    success: function (data) {
+      $('#modalPacienteFormContainer').html(data);
+    }
+  });
+});
+// Manejar el submit del formulario de paciente (delegado)
+$(document).on('submit', '#form-paciente-basico', function(e) {
+  e.preventDefault();
+  var $form = $(this);
+  $.ajax({
+    url: $form.attr('action'),
+    type: 'POST',
+    data: $form.serialize(),
+    success: function(data) {
+      if (data.success) {
+        $('#modalCrearPaciente').modal('hide');
+        // Seleccionar automáticamente el paciente en el formulario de cita
+        if (data.paciente && data.paciente.id) {
+          $('#id_paciente').val(data.paciente.id);
+          $('#paciente-autocomplete').val(data.paciente.nombres + ' ' + data.paciente.apellidos);
+        }
+      } else if (data.html) {
+        $('#modalPacienteFormContainer').html(data.html);
+      } else {
+        alert('Error al guardar el paciente.');
+      }
+    },
+    error: function() {
+      alert('Error de red al guardar paciente.');
+    }
+  });
+});
+</script>

@@ -201,6 +201,8 @@ class PagoUpdateView(SidebarMenuMixin, PermissionMixin, UpdateViewMixin, UpdateV
         return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
+        import json
+        from django.conf import settings
         context = super().get_context_data(**kwargs)
         servicios_qs = ServiciosAdicionales.objects.filter(activo=True)
         servicios = [
@@ -212,9 +214,19 @@ class PagoUpdateView(SidebarMenuMixin, PermissionMixin, UpdateViewMixin, UpdateV
             for s in servicios_qs.values('id', 'nombre_servicio', 'costo_servicio')
         ]
         context['servicios'] = json.dumps(servicios)
-        # Pasar detalles actuales para edición
+        context['PAYPAL_CLIENT_ID'] = getattr(settings, 'PAYPAL_CLIENT_ID', '')
+        # Pasar detalles actuales para edición (serializable y JSON)
         if self.object:
-            context['detalles'] = DetallePago.objects.filter(pago=self.object)
+            detalles_qs = DetallePago.objects.filter(pago=self.object)
+            detalles_list = list(detalles_qs.values(
+                'servicio_adicional_id', 'cantidad', 'precio_unitario', 'descuento_porcentaje',
+                'aplica_seguro', 'valor_seguro', 'descripcion_seguro'
+            ))
+            for d in detalles_list:
+                d['precio_unitario'] = float(d['precio_unitario'])
+                d['valor_seguro'] = float(d['valor_seguro'])
+                d['descuento_porcentaje'] = float(d['descuento_porcentaje'])
+            context['detalles'] = json.dumps(detalles_list)
         return context
 
 class PagoDeleteView(SidebarMenuMixin, PermissionMixin, DeleteViewMixin, DeleteView):
@@ -238,20 +250,28 @@ class PagoDeleteView(SidebarMenuMixin, PermissionMixin, DeleteViewMixin, DeleteV
 # Vista para manejar el retorno de PayPal
 class PagoPayPalReturnView(View):
     def get(self, request):
+        from django.contrib import messages
         order_id = request.GET.get('token')
         if not order_id:
+            messages.error(request, 'Error: No se recibió token de PayPal.')
             return HttpResponse('Error: No se recibió token de PayPal', status=400)
         paypal = PayPalAPI()
-        capture = paypal.capture_order(order_id)
+        try:
+            capture = paypal.capture_order(order_id)
+        except Exception as e:
+            messages.error(request, f'Error al capturar el pago en PayPal: {e}')
+            return redirect('doctor:pago_list')
         # Recuperar datos del pago desde la sesión
         data = request.session.pop('pago_form_data', None)
         detalles = request.session.pop('pago_detalles', None)
         if not data or not detalles:
-            return HttpResponse('Error: No se encontró información del pago en sesión', status=400)
+            messages.error(request, 'Error: No se encontró información del pago en sesión.')
+            return redirect('doctor:pago_list')
         # Marcar como pagado si la captura fue exitosa
         data['estado'] = 'pagado'
         from applications.doctor.utils.transacciones_pago import crear_pago_con_detalles
         crear_pago_con_detalles(request, data, detalles)
+        messages.success(request, '¡Pago realizado exitosamente con PayPal!')
         return redirect('doctor:pago_list')
 
 # Vista para imprimir el PDF del pago

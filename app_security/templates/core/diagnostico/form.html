@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block title %}{{ form.instance.pk|yesno:'Editar Diagnóstico,Nuevo Diagnóstico' }}{% endblock %}
 {% block content %}
 {% include 'fragments/messages.html' %}
 {% include 'fragments/form_errors.html' %}
@@ -58,15 +59,134 @@
     display: flex;
     align-items: center;
     gap: 1.2rem;
+    letter-spacing: 0.03em;
+    justify-content: center;
+    text-align: center;
     background: linear-gradient(90deg, var(--gold-premium), var(--aurora2));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
-.premium-form-icon {
+.premium-form-title .premium-form-icon {
     color: var(--gold-premium);
     font-size: 2.5rem;
     margin-right: 0.5rem;
+}
+.premium-form-group {
+    margin-bottom: 1.7rem;
+    position: relative;
+}
+.premium-form-label {
+    display: block;
+    font-weight: 700;
+    color: var(--aurora1);
+    margin-bottom: 0.5rem;
+    font-size: 1.13rem;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 8px var(--text-shadow);
+}
+.premium-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.premium-input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--aurora2);
+    font-size: 1.2rem;
+    pointer-events: none;
+    transition: color 0.2s;
+    z-index: 2;
+}
+.premium-form-card input,
+.premium-form-card select,
+.premium-form-card textarea {
+    width: 100%;
+    border-radius: 1rem;
+    border: 2px solid var(--gold-premium);
+    background: rgba(255,255,255,0.93);
+    padding: 0.85rem 1.25rem 0.85rem 2.7rem;
+    font-size: 1.08rem;
+    color: var(--text-dark);
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 2px 8px 0 var(--aurora1);
+    outline: none;
+    z-index: 1;
+}
+.premium-form-card input:focus,
+.premium-form-card select:focus,
+.premium-form-card textarea:focus {
+    border-color: var(--aurora1);
+    background: rgba(255,255,255,0.99);
+    box-shadow: 0 0 0 6px var(--aurora2);
+}
+.premium-form-error {
+    display: inline-block;
+    background: var(--gold-bg);
+    color: var(--danger);
+    border: 1.5px solid var(--gold-premium);
+    border-radius: 0.75rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.98rem;
+    margin-bottom: 0.5rem;
+    margin-top: 0.2rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px 0 var(--gold-light);
+    animation: fadeInError 0.5s;
+}
+@keyframes fadeInError {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: none; }
+}
+.premium-form-help {
+    font-size: 0.97rem;
+    color: var(--aurora2);
+    margin-top: 0.2rem;
+    margin-left: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.premium-form-btn {
+    background: linear-gradient(135deg, var(--aurora1) 0%, var(--aurora2) 100%);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 1.2rem;
+    padding: 0.85rem 2.2rem;
+    font-size: 1.15rem;
+    box-shadow: 0 10px 15px -3px var(--primary-blue), 0 0 0 1px var(--aurora1);
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    border: 2px solid var(--gold-premium);
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.premium-form-btn:hover {
+    background: linear-gradient(135deg, var(--btn-login) 0%, var(--btn-login-hover) 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 16px 32px -8px var(--aurora1), 0 0 0 3px var(--gold-premium);
+}
+.premium-form-cancel {
+    border: 2px solid var(--gold-premium);
+    color: var(--aurora1);
+    background: var(--gold-bg);
+    border-radius: 1.2rem;
+    padding: 0.85rem 2.2rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-left: 1rem;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.premium-form-cancel:hover {
+    background: var(--gold-hover);
+    color: var(--aurora2);
 }
 @media (max-width: 600px) {
     .premium-form-card {
@@ -84,38 +204,74 @@
             <span class="premium-form-icon">
                 <img src="{% static 'img/iconos/diagnostico.svg' %}" alt="Diagnóstico" style="height:2.5rem;width:2.5rem;">
             </span>
-            {{ view.object.pk|yesno:'Editar,Registrar' }} Diagnóstico
+            {{ form.instance.pk|yesno:'Editar Diagnóstico,Nuevo Diagnóstico' }}
         </div>
         <form method="post" enctype="multipart/form-data" class="space-y-4">
             {% csrf_token %}
             {% for field in form %}
-                <div>
-                    <label for="{{ field.id_for_label }}" class="block font-semibold">{{ field.label }}{% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
-                    {% if field.name == "datos_adicionales" %}
-                        <div class="flex items-center gap-2">
-                            {{ field|safe }}
-                            <button type="button" class="mic-btn" onclick="startDictation('{{ field.id_for_label }}')" title="Dictar por voz" style="margin-left:5px;vertical-align:middle;">
+                <div class="premium-form-group">
+                    <label for="{{ field.id_for_label }}" class="premium-form-label">{{ field.label }}{% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+                    <div class="premium-input-wrapper">
+                        {% if field.name == "codigo" %}
+                            <i class="fas fa-barcode premium-input-icon"></i>
+                        {% elif field.name == "descripcion" %}
+                            <i class="fas fa-file-medical-alt premium-input-icon"></i>
+                        {% elif field.name == "datos_adicionales" %}
+                            <i class="fas fa-info-circle premium-input-icon"></i>
+                            <button type="button" class="mic-btn" onclick="startDictation('{{ field.id_for_label }}')" title="Dictar por voz" style="margin-left:5px;vertical-align:middle;background:none;border:none;outline:none;cursor:pointer;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.92V21h3a1 1 0 1 1 0 2H8a1 1 0 1 1 0-2h3v-2.08A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 0 0 10 0z"/>
                                 </svg>
                             </button>
-                            {% if field.help_text %}
-                                <small class="text-gray-500">{{ field.help_text }}</small>
-                            {% endif %}
-                        </div>
-                    {% else %}
-                        {{ field }}
-                        {% if field.help_text %}
-                            <small class="text-gray-500">{{ field.help_text }}</small>
                         {% endif %}
+                        {{ field|safe }}
+                    </div>
+                    {% if field.help_text %}
+                        <div class="premium-form-help"><i class="fas fa-circle-info"></i> {{ field.help_text }}</div>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="premium-form-error">{{ field.errors|striptags }}</div>
                     {% endif %}
                 </div>
             {% endfor %}
-            <div class="flex gap-2 mt-4">
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a href="{% url 'core:diagnostico_list' %}" class="btn btn-secondary">Cancelar</a>
+            <div class="flex justify-center mt-6 gap-4">
+                <button type="submit" class="premium-form-btn">
+                    <i class="fas fa-floppy-disk"></i>
+                    Guardar
+                </button>
+                <a href="{% url 'core:diagnostico_list' %}" class="premium-form-cancel">
+                    <i class="fas fa-xmark"></i>
+                    Cancelar
+                </a>
             </div>
         </form>
     </div>
 </div>
+<script>
+function startDictation(fieldId) {
+    if (!('webkitSpeechRecognition' in window)) {
+        alert('Tu navegador no soporta dictado por voz. Usa Chrome o Edge.');
+        return;
+    }
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    const textarea = document.getElementById(fieldId);
+    if (!textarea) return;
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        if (textarea.value) {
+            textarea.value += ' ' + transcript;
+        } else {
+            textarea.value = transcript;
+        }
+        textarea.focus();
+    };
+    recognition.onerror = function(event) {
+        alert('Error en el reconocimiento de voz: ' + event.error);
+    };
+    recognition.start();
+}
+</script>
 {% endblock %}

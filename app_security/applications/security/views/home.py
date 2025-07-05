@@ -1,12 +1,14 @@
 from django.views.generic import TemplateView
 from applications.security.components.menu_module import MenuModule
 from applications.security.components.mixin_crud import PermissionMixin
+from applications.core.models import Paciente
+from datetime import date
 
 class ModuloTemplateView(PermissionMixin,TemplateView):
     template_name = 'home.html'
    
     def get_context_data(self, **kwargs):
-        context={}
+        context = super().get_context_data(**kwargs)
         context["title"]= "IC - Modulos"
         context["title1"]= "Modulos Disponibles"
         MenuModule(self.request).fill(context)
@@ -21,4 +23,19 @@ class ModuloTemplateView(PermissionMixin,TemplateView):
                 sidebar_menu = menu_item
         context['herramientas_menu'] = herramientas_menu
         context['sidebar_menu'] = sidebar_menu
+
+        # Calcular estadísticas de pacientes
+        adultos = Paciente.objects.filter(activo=True, fecha_nacimiento__isnull=False).filter(
+            fecha_nacimiento__lte=date.today().replace(year=date.today().year-18),
+            fecha_nacimiento__gt=date.today().replace(year=date.today().year-60)
+        ).count()
+        ninos = Paciente.objects.filter(activo=True, fecha_nacimiento__isnull=False).filter(
+            fecha_nacimiento__gt=date.today().replace(year=date.today().year-18)
+        ).count()
+        mayores = Paciente.objects.filter(activo=True, fecha_nacimiento__isnull=False).filter(
+            fecha_nacimiento__lte=date.today().replace(year=date.today().year-60)
+        ).count()
+        context['pacientes_adultos'] = adultos
+        context['pacientes_ninos'] = ninos
+        context['pacientes_mayores'] = mayores
         return context

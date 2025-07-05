@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Horarios de Atención{% endblock %}
+{% block content %}
+{% include 'fragments/messages.html' %}
+<link rel="stylesheet" href="{% static 'forms/premium.css' %}">
+<div class="premium-gradient relative overflow-hidden rounded-b-3xl shadow-lg mb-3">
+    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-y-12"></div>
+    <div class="max-w-4xl mx-auto px-6 py-6 relative z-10">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-white text-center md:text-left">
+                <h1 class="text-4xl font-bold mb-4 neon-glow tracking-tight">
+                    Horarios de Atención
+                    <span class="inline-block floating-animation">
+                        <i class="fas fa-clock text-[var(--gold-premium)]"></i>
+                    </span>
+                </h1>
+                <p class="text-white/90 text-lg">Panel premium de gestión de horarios de atención</p>
+            </div>
+            <div class="flex items-center space-x-8">
+                <div class="text-center text-white bg-white/10 rounded-2xl p-6 backdrop-blur-lg flex flex-col items-center justify-center">
+                    <p class="text-sm opacity-90 mb-2">Total de Horarios</p>
+                    <p class="text-3xl font-bold neon-glow">{{ horarios|length|default:"0" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="max-w-4xl mx-auto px-6 py-6 -mt-1 relative z-20">
+    <div class="premium-card rounded-3xl overflow-hidden">
+        <div class="px-8 py-8 border-b-2 border-[var(--gold-premium)] gold-gradient">
+            <h3 class="text-2xl font-bold mb-4 flex items-center gap-4" style="margin-left: 1.5rem; color: var(--aurora1);">
+                <i class="fas fa-table-list" style="color: var(--aurora1); filter: drop-shadow(0 2px 6px var(--aurora2)); margin-right: 0.5rem;"></i>
+                Lista de Horarios de Atención
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-center">
+                <thead>
+                    <tr>
+                        <th class="premium-table-header text-center">Día</th>
+                        <th class="premium-table-header text-center">Hora Inicio</th>
+                        <th class="premium-table-header text-center">Hora Fin</th>
+                        <th class="premium-table-header text-center">Intervalo</th>
+                        <th class="premium-table-header text-center">Activo</th>
+                        <th class="premium-table-header text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for horario in horarios %}
+                    <tr class="table-row-hover">
+                        <td class="premium-cell text-center font-bold">{{ horario.get_dia_semana_display }}</td>
+                        <td class="premium-cell text-center">{{ horario.hora_inicio|time:'H:i' }}</td>
+                        <td class="premium-cell text-center">{{ horario.hora_fin|time:'H:i' }}</td>
+                        <td class="premium-cell text-center">
+                            {% if horario.intervalo_desde and horario.intervalo_hasta %}
+                                {{ horario.intervalo_desde|time:'H:i' }} - {{ horario.intervalo_hasta|time:'H:i' }}
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="premium-cell text-center">
+                            {% if horario.activo %}
+                                <span class="premium-badge bg-green-100 text-green-700"><i class="fas fa-check-circle mr-1"></i>Activo</span>
+                            {% else %}
+                                <span class="premium-badge bg-red-100 text-red-700"><i class="fas fa-times-circle mr-1"></i>Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td class="premium-cell text-center">
+                            <div class="flex flex-row items-center justify-center gap-6">
+                                <a href="{% url 'doctor:horario_update' horario.pk %}"
+                                   class="premium-button !p-3 !bg-[var(--aurora2)]/10 hover:!bg-[var(--aurora2)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--aurora2)]"
+                                   title="Editar">
+                                    <i class="fas fa-pen-to-square text-[var(--aurora1)] text-xl"></i>
+                                </a>
+                                <a href="#"
+                                   class="premium-button !p-3 !bg-red-100 hover:!bg-red-200 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
+                                   onclick="openDeleteModal('{{ horario.pk }}', 'Horario de {{ horario.get_dia_semana_display }}')"
+                                   title="Eliminar">
+                                    <i class="fas fa-trash-can text-red-600 text-xl"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-8 py-8 border-b-2 border-[var(--gold-premium)] gold-gradient text-center">
+                            <div class="flex flex-col items-center space-y-6">
+                                <div class="premium-icon-container !w-24 !h-24 mb-4">
+                                    <i class="fas fa-clock !text-4xl"></i>
+                                </div>
+                                <h3 class="text-2xl font-bold text-[var(--text-dark)]">
+                                    No hay horarios registrados
+                                </h3>
+                                <p class="text-[var(--text-secondary)] text-lg mb-6">
+                                    Comienza agregando tu primer horario de atención
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="6" class="p-0">
+                            <a href="{% url 'doctor:horario_create' %}"
+                               class="block w-full text-center py-4 premium-gradient text-white font-bold text-lg rounded-b-3xl hover:from-[var(--aurora2)] hover:to-[var(--aurora1)] transition-all duration-300 flex items-center justify-center gap-3">
+                                <span class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20">
+                                    <i class="fas fa-clock text-2xl text-[var(--gold-premium)]"></i>
+                                </span>
+                                <span>Nuevo Horario</span>
+                            </a>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% include 'fragments/delete.html' %}
+{% endblock %}

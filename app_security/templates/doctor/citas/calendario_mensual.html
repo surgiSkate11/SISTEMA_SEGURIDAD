@@ -1,0 +1,368 @@
+{% extends "doctor/citas/calendario.html" %}
+{% load static %}
+{% block calendario_content %}
+<style>
+:root {
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --gradient-gold: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --shadow-strong: 0 20px 60px rgba(0, 0, 0, 0.15);
+    --text-primary: #2d3748;
+    --text-secondary: #718096;
+    --text-light: rgba(255, 255, 255, 0.9);
+}
+.premium-mes-main {
+    max-width: 1400px;
+    margin: 0 auto;
+    animation: fadeInUp 0.8s ease-out;
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.premium-mes-header {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border-radius: 2rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-strong);
+    border: 1px solid var(--glass-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    align-items: center;
+    justify-content: space-between;
+}
+.premium-mes-header-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+.premium-mes-header-icon {
+    width: 4rem;
+    height: 4rem;
+    background: var(--gradient-secondary);
+    border-radius: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-soft);
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+.premium-mes-header-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+.premium-mes-header-text h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.premium-mes-header-text p {
+    font-size: 1.1rem;
+    color: var(--text-light);
+    font-weight: 500;
+}
+.premium-mes-header-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.premium-select {
+    background: rgba(255,255,255,0.95);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 1rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    box-shadow: var(--shadow-soft);
+    transition: all 0.3s ease;
+    outline: none;
+    cursor: pointer;
+}
+.premium-select:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-strong);
+}
+.premium-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.3);
+}
+.btn-premium {
+    background: var(--gradient-accent);
+    border: none;
+    border-radius: 1rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    box-shadow: var(--shadow-soft);
+    transition: all 0.3s ease;
+}
+.btn-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-strong);
+}
+.premium-mes-calendar-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border-radius: 2rem;
+    padding: 2rem;
+    box-shadow: var(--shadow-strong);
+    border: 1px solid var(--glass-border);
+}
+.premium-mes-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.premium-mes-calendar-header {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-light);
+    padding: 1rem;
+    background: var(--gradient-primary);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-soft);
+}
+.premium-mes-day-cell {
+    background: rgba(255,255,255,0.9);
+    border-radius: 1rem;
+    padding: 1rem;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+.premium-mes-day-cell:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-strong);
+    background: rgba(255,255,255,0.95);
+}
+.premium-mes-day-cell.today {
+    background: var(--gradient-gold);
+    color: white;
+    box-shadow: 0 0 0 3px rgba(255,224,102,0.5);
+}
+.premium-mes-day-cell.other-month {
+    background: rgba(255,255,255,0.3);
+    color: var(--text-secondary);
+}
+.premium-mes-day-number {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+.premium-mes-day-cell.today .premium-mes-day-number {
+    color: white;
+}
+.premium-mes-appointment {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+}
+.premium-mes-appointment.completed {
+    background: linear-gradient(135deg, #b2f2d7 0%, #63e6be 100%); /* Verde pastel premium */
+    color: #176c4a;
+}
+.premium-mes-appointment.occupied {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%) !important; /* Rojo premium real */
+    color: #a12a2a !important;
+}
+.premium-mes-appointment.available {
+    background: linear-gradient(135deg, #fff9c4 0%, #ffe066 100%); /* Amarillo pastel premium */
+    color: #b26a00;
+}
+.premium-mes-appointment-counter {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: var(--gradient-secondary);
+    color: white;
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    box-shadow: var(--shadow-soft);
+}
+.legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    color: var(--text-light);
+}
+.legend-color {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+    box-shadow: var(--shadow-soft);
+}
+@media (max-width: 768px) {
+    .premium-mes-calendar-grid { gap: 0.5rem; }
+    .premium-mes-day-cell { min-height: 80px; padding: 0.5rem; }
+    .premium-mes-header { padding: 1.5rem; }
+    .premium-mes-header-text h1 { font-size: 1.5rem; }
+    .premium-mes-appointment { font-size: 0.7rem; padding: 0.2rem 0.4rem; }
+}
+</style>
+<div class="premium-mes-main">
+  <div class="premium-mes-header">
+    <div class="premium-mes-header-info">
+      <div class="premium-mes-header-icon">
+        <i class="fas fa-calendar-alt"></i>
+      </div>
+      <div class="premium-mes-header-text">
+        <h1>Agenda Premium - Vista Mensual</h1>
+        <p>{{ mes_actual }} {{ anio_actual }}</p>
+      </div>
+    </div>
+    <form method="get" class="premium-mes-header-controls">
+      <select name="mes" class="premium-select">
+        {% for num, nombre in meses %}
+          <option value="{{ num }}" {% if num == mes_actual_num %}selected{% endif %}>{{ nombre }}</option>
+        {% endfor %}
+      </select>
+      <select name="anio" class="premium-select">
+        {% for y in anios %}
+          <option value="{{ y }}" {% if y == anio_actual %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn-premium"><i class="fas fa-sync-alt"></i> Filtrar</button>
+    </form>
+  </div>
+  <div class="premium-mes-calendar-container">
+    <div class="premium-mes-calendar-grid">
+      <div class="premium-mes-calendar-header">Lun</div>
+      <div class="premium-mes-calendar-header">Mar</div>
+      <div class="premium-mes-calendar-header">Mié</div>
+      <div class="premium-mes-calendar-header">Jue</div>
+      <div class="premium-mes-calendar-header">Vie</div>
+      <div class="premium-mes-calendar-header">Sáb</div>
+      <div class="premium-mes-calendar-header">Dom</div>
+      {% for dia in dias_mes %}
+        {% if dia.numero %}
+          <div class="premium-mes-day-cell{% if dia.es_hoy %} today{% endif %}" >
+            <div class="premium-mes-day-number">{{ dia.numero }}</div>
+            {% if dia.tiene_citas %}
+              {% with dia.citas|length as appointment_count %}
+                {% if appointment_count > 0 %}
+                  <div class="premium-mes-appointment-counter">{{ appointment_count }}</div>
+                {% endif %}
+                {% for cita in dia.citas|slice:":3" %}
+                  <div class="premium-mes-appointment {% if cita.estado == 'atendido' %}completed{% elif cita.estado == 'ocupado' %}occupied{% elif cita.estado == 'disponible' %}available{% endif %}"
+                    data-hora="{{ cita.hora }}"
+                    data-paciente="{{ cita.paciente }}"
+                    data-estado="{{ cita.estado }}"
+                    data-detalle="{{ cita.detalle|default:'' }}"
+                    onclick="mostrarDetalleCita(this)">
+                    {{ cita.hora }} - {{ cita.paciente }}
+                  </div>
+                {% endfor %}
+                {% if appointment_count > 3 %}
+                  <div class="premium-mes-appointment pending">+{{ appointment_count|add:"-3" }} más</div>
+                {% endif %}
+              {% endwith %}
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="premium-mes-day-cell other-month"></div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background: linear-gradient(135deg, #48bb78, #38a169);"></div>
+        <span>Atendido</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: linear-gradient(135deg, #f56565, #e53e3e);"></div>
+        <span>Ocupado</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: linear-gradient(135deg, #ed8936, #dd6b20);"></div>
+        <span>Pendiente</span>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal de Detalle de Cita -->
+<div id="modalDetalleCita" style="display:none;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;background:rgba(30,41,59,0.25);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:rgba(255,255,255,0.98);border-radius:2rem;max-width:350px;width:90vw;padding:2rem 1.5rem;box-shadow:0 16px 48px 0 #b2f2d7,0 0 0 4px #ffd59e;position:relative;display:flex;flex-direction:column;gap:1.2rem;align-items:center;">
+    <h2 style="font-size:1.3rem;font-weight:800;color:#764ba2;margin-bottom:0.5rem;">Detalle de Cita</h2>
+    <div id="detalleCitaContenido" style="width:100%;color:#2d3748;font-size:1.08rem;"></div>
+    <button onclick="cerrarDetalleCita()" style="margin-top:1rem;background:linear-gradient(90deg,#764ba2 60%,#4facfe 100%);color:white;border:none;border-radius:1rem;padding:0.7rem 2rem;font-weight:700;font-size:1rem;box-shadow:0 4px 16px #b2f2d7;cursor:pointer;">Cerrar</button>
+  </div>
+</div>
+<script>
+function mostrarDetalleCita(el) {
+  const hora = el.getAttribute('data-hora');
+  const paciente = el.getAttribute('data-paciente');
+  const estado = el.getAttribute('data-estado');
+  const detalle = el.getAttribute('data-detalle') || '';
+  let estadoTexto = '';
+  let color = '';
+  if (estado === 'atendido') { estadoTexto = 'Atendido'; color = 'background:linear-gradient(135deg,#b2f2d7,#63e6be);color:#176c4a;'; }
+  else if (estado === 'ocupado') { estadoTexto = 'Ocupado'; color = 'background:linear-gradient(135deg,#ffd6d6,#ffb4b4);color:#a12a2a;'; }
+  else if (estado === 'disponible') { estadoTexto = 'Disponible'; color = 'background:linear-gradient(135deg,#fff9c4,#ffe066);color:#b26a00;'; }
+  else { estadoTexto = estado; color = ''; }
+  document.getElementById('detalleCitaContenido').innerHTML = `
+    <div style="margin-bottom:0.7rem;"><b>Hora:</b> ${hora}</div>
+    <div style="margin-bottom:0.7rem;"><b>Paciente:</b> ${paciente}</div>
+    <div style="margin-bottom:0.7rem;"><b>Estado:</b> <span style='${color}padding:0.2rem 0.7rem;border-radius:0.7rem;'>${estadoTexto}</span></div>
+    ${detalle ? `<div style='margin-bottom:0.7rem;'><b>Detalle:</b> ${detalle}</div>` : ''}
+  `;
+  document.getElementById('modalDetalleCita').style.display = 'flex';
+}
+function cerrarDetalleCita() {
+  document.getElementById('modalDetalleCita').style.display = 'none';
+}
+// Cerrar modal al hacer click fuera
+window.addEventListener('click', function(e) {
+  const modal = document.getElementById('modalDetalleCita');
+  if (modal.style.display === 'flex' && !modal.children[0].contains(e.target) && e.target !== modal) {
+    cerrarDetalleCita();
+  }
+});
+</script>
+{% endblock %}

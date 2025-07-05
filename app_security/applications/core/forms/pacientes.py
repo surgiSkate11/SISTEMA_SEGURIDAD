@@ -6,7 +6,7 @@ class PacienteForm(forms.ModelForm):
         model = Paciente
         fields = '__all__'
         widgets = {
-            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date', 'class': 'form-input', 'required': True}),
+            'fecha_nacimiento': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-input', 'required': True}),
             'telefono': forms.TextInput(attrs={'class': 'form-input', 'pattern': r'^[0-9, ]+$', 'title': 'Solo números y comas', 'required': True}),
             'email': forms.EmailInput(attrs={'class': 'form-input', 'placeholder': 'ejemplo@correo.com'}),
             'nombres': forms.TextInput(attrs={'class': 'form-input', 'required': True}),

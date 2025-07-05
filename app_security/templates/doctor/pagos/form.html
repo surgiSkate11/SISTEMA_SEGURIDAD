@@ -302,6 +302,9 @@
                 <i class="fas fa-floppy-disk"></i>
                 Guardar
             </button>
+            <button type="button" id="btn-paypal-pago" class="premium-form-btn" style="background:#fff; border:2px solid #0070ba; color:#0070ba; display:flex; align-items:center; gap:0.7rem;">
+                <img src="{% static 'img/iconos/paypal.svg' %}" alt="PayPal" style="height:1.6rem; margin-right:0.5rem;">Pagar con PayPal
+            </button>
             <a href="{% url 'doctor:pago_list' %}" class="premium-form-cancel">
                 <i class="fas fa-xmark"></i>
                 Cancelar
@@ -353,10 +356,27 @@
 
 {# --- JSON seguro para servicios --- #}
 <script id="servicios-json" type="application/json">{{ servicios|safe }}</script>
+{# --- JSON seguro para detalles (solo en edición) --- #}
+{% if detalles and detalles|length > 0 %}
+<script id="detalles-json" type="application/json">{{ detalles|safe }}</script>
+{% endif %}
 
 <script>
 const serviciosDisponibles = JSON.parse(document.getElementById('servicios-json').textContent);
 let detalles = [];
+// Inicializar detalles desde backend si existen (edición)
+const detallesJson = document.getElementById('detalles-json');
+if (detallesJson) {
+    detalles = JSON.parse(detallesJson.textContent).map(d => ({
+        servicio_adicional: d.servicio_adicional_id,
+        cantidad: d.cantidad,
+        precio_unitario: parseFloat(d.precio_unitario),
+        descuento_porcentaje: parseFloat(d.descuento_porcentaje),
+        aplica_seguro: d.aplica_seguro,
+        valor_seguro: parseFloat(d.valor_seguro),
+        descripcion_seguro: d.descripcion_seguro || ''
+    }));
+}
 
 function renderTablaServicios() {
     const tbody = document.getElementById('detalle-servicios-body');
@@ -420,34 +440,37 @@ document.getElementById('btn-agregar-servicio').onclick = function() {
 };
 renderTablaServicios();
 
-    // --- Modal AJAX para crear servicio adicional premium ---
-    const modalServicioContainer = document.getElementById('modal-servicio-container');
-    window.abrirModalServicio = function() {
-        fetch("{% url 'doctor:servicio_create_ajax' %}", {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(r => r.json())
-        .then(function(data) {
-            modalServicioContainer.innerHTML = data.html;
-            modalServicioContainer.style.display = 'block';
-            document.body.classList.add('modal-open');
-            window.cerrarModalServicioFn = function() {
-                modalServicioContainer.innerHTML = '';
-                modalServicioContainer.style.display = 'none';
-                document.body.classList.remove('modal-open');
-            };
-            window.onServicioCreado = function(servicio) {
-                serviciosDisponibles.push({id: servicio.id, nombre: servicio.nombre, precio: servicio.costo});
-                detalles.forEach(d => {
-                    // Si el usuario quiere, puede seleccionar el nuevo servicio en la fila actual
-                });
-                renderTablaServicios();
-            };
-        });
-    };
-    // Botón global para abrir el modal desde la tabla
-    // Puedes poner un botón junto al select de servicio en cada fila si lo deseas
-    </script>
+// --- Modal AJAX para crear servicio adicional premium ---
+const modalServicioContainer = document.getElementById('modal-servicio-container');
+window.abrirModalServicio = function() {
+    fetch("{% url 'doctor:servicio_create_ajax' %}", {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(function(data) {
+        modalServicioContainer.innerHTML = data.html;
+        modalServicioContainer.style.display = 'block';
+        document.body.classList.add('modal-open');
+        window.cerrarModalServicioFn = function() {
+            modalServicioContainer.innerHTML = '';
+            modalServicioContainer.style.display = 'none';
+            document.body.classList.remove('modal-open');
+        };
+        window.onServicioCreado = function(servicio) {
+            serviciosDisponibles.push({id: servicio.id, nombre: servicio.nombre, precio: servicio.costo});
+            detalles.forEach(d => {
+                // Si el usuario quiere, puede seleccionar el nuevo servicio en la fila actual
+            });
+            renderTablaServicios();
+        };
+    });
+};
+// Antes de enviar el form, asegura que detalles_data esté actualizado
+const formPago = document.getElementById('form-pago-premium');
+formPago.addEventListener('submit', function(e) {
+    document.getElementById('detalles_data').value = JSON.stringify(detalles);
+});
+</script>
 <script>
 // Mostrar/ocultar fecha de pago según estado
 function toggleFechaPago() {
@@ -477,5 +500,62 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleFechaPago(); // inicial
     }
 });
+</script>
+<!-- SDK de PayPal (sandbox) -->
+<script src="https://www.sandbox.paypal.com/sdk/js?client-id={{ PAYPAL_CLIENT_ID }}&currency=USD"></script>
+<script>
+// --- Habilitar/deshabilitar botón PayPal según método seleccionado ---
+function togglePaypalBtn() {
+    const metodo = document.getElementById('id_metodo_pago');
+    const btnPaypal = document.getElementById('btn-paypal-pago');
+    if (metodo && btnPaypal) {
+        if (metodo.value && metodo.value.toLowerCase() === 'paypal') {
+            btnPaypal.style.display = 'flex';
+        } else {
+            btnPaypal.style.display = 'none';
+        }
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const metodo = document.getElementById('id_metodo_pago');
+    if (metodo) {
+        metodo.addEventListener('change', togglePaypalBtn);
+        togglePaypalBtn();
+    }
+});
+
+// --- Botón PayPal ---
+document.getElementById('btn-paypal-pago').onclick = async function() {
+    const metodo = document.getElementById('id_metodo_pago');
+    if (!metodo || metodo.value.toLowerCase() !== 'paypal') {
+        alert('Selecciona PayPal como método de pago para continuar.');
+        return;
+    }
+    // Calcula el total actual de la tabla
+    let total = 0;
+    detalles.forEach((d) => {
+        const subtotal = ((d.cantidad * d.precio_unitario) * (1 - (d.descuento_porcentaje||0)/100)) - (d.aplica_seguro ? (d.valor_seguro||0) : 0);
+        total += subtotal > 0 ? subtotal : 0;
+    });
+    if (total <= 0) {
+        alert('Debes agregar al menos un servicio válido para pagar con PayPal.');
+        return;
+    }
+    // Crea la orden PayPal vía AJAX
+    const formData = new FormData();
+    formData.append('monto', total.toFixed(2));
+    const resp = await fetch("{% url 'doctor:pago_paypal_create_order' %}", {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: formData
+    });
+    const data = await resp.json();
+    if (data.orderID) {
+        // Redirige a PayPal sandbox para pruebas
+        window.location.href = `https://www.sandbox.paypal.com/checkoutnow?token=${data.orderID}`;
+    } else {
+        alert('Error creando la orden PayPal: ' + (data.error || 'Desconocido'));
+    }
+};
 </script>
 {% endblock %}

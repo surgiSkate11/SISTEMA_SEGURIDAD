@@ -1,19 +1,34 @@
 {% for diagnostico in diagnosticos %}
 <tr class="table-row-hover">
-    <td class="premium-cell">{{ diagnostico.paciente }}</td>
-    <td class="premium-cell">{{ diagnostico.descripcion|truncatechars:40 }}</td>
-    <td class="premium-cell">{{ diagnostico.fecha|date:'d/m/Y' }}</td>
+    <td class="premium-cell text-center font-bold">
+        <div class="flex items-center space-x-3 justify-center">
+            <div class="premium-icon-container">
+                <i class="fas fa-notes-medical"></i>
+            </div>
+            <span>{{ diagnostico.codigo }}</span>
+        </div>
+    </td>
+    <td class="premium-cell text-center">
+        <span title="{{ diagnostico.descripcion }}">
+            {{ diagnostico.descripcion|truncatechars:40 }}
+        </span>
+    </td>
+    <td class="premium-cell text-center">
+        <span title="{{ diagnostico.datos_adicionales }}">
+            {{ diagnostico.datos_adicionales|default:'-'|truncatechars:40 }}
+        </span>
+    </td>
     <td class="premium-cell text-center">
         <div class="flex flex-row items-center justify-center gap-6">
             <a href="{% url 'core:diagnostico_update' diagnostico.pk %}"
                class="premium-button !p-3 !bg-[var(--aurora2)]/10 hover:!bg-[var(--aurora2)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--aurora2)]"
-               title="Editar">
+               title="Editar diagnóstico">
                 <i class="fas fa-pen-to-square text-[var(--aurora1)] text-xl"></i>
             </a>
             <a href="#"
                class="premium-button !p-3 !bg-red-100 hover:!bg-red-200 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
-               onclick="openDeleteModal('{{ diagnostico.pk }}', 'Diagnóstico de {{ diagnostico.paciente }}')"
-               title="Eliminar">
+               onclick="openDeleteModal('{{ diagnostico.pk }}', 'Diagnóstico {{ diagnostico.codigo }}')"
+               title="Eliminar diagnóstico">
                 <i class="fas fa-trash-can text-red-600 text-xl"></i>
             </a>
         </div>

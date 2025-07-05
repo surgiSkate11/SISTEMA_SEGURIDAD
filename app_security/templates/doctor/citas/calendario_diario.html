@@ -267,6 +267,63 @@
           background: #e0e7ef;
           color: #222;
         }
+        /* MODAL PREMIUM CREAR CITA: efecto borroso y centrado */
+        #modal-crear-cita-bg {
+          position: fixed;
+          inset: 0;
+          background: rgba(30,30,60,0.35);
+          z-index: 10000;
+          display: none;
+          align-items: center;
+          justify-content: center;
+          backdrop-filter: blur(12px); /* Efecto borroso premium mejorado */
+          transition: opacity 0.2s;
+        }
+        #modal-crear-cita-bg.show { display: flex !important; opacity: 1; }
+        #modal-crear-cita-content {
+          background: none !important;
+          border-radius: 2.5rem;
+          box-shadow: none;
+          padding: 0;
+          min-width: 0;
+          max-width: 100vw;
+          width: auto;
+          outline: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          /* Elimina cualquier fondo blanco */
+        }
+        #modal-crear-cita-content > .premium-form-card, #modal-crear-cita-content > form {
+          margin: 0 auto !important;
+          max-width: 32rem !important;
+          width: 100% !important;
+          min-width: 0;
+          box-sizing: border-box;
+          background: white;
+          border-radius: 2rem;
+          box-shadow: 0 8px 40px 0 rgba(30,27,75,0.18);
+          padding: 2.5rem 1.5rem 2rem 1.5rem;
+          overflow-y: auto;
+          max-height: 90vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        @media (max-width: 600px) {
+          #modal-crear-cita-content > .premium-form-card, #modal-crear-cita-content > form {
+            max-width: 98vw !important;
+            padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+            border-radius: 1.2rem;
+          }
+        }
+        /* Eliminar fondo blanco de .modal-content si se reutiliza */
+        .modal-content {
+          background: none !important;
+          box-shadow: none !important;
+          border-radius: 2.5rem !important;
+          padding: 0 !important;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 premium-calendar-content" style="border-radius:2.5rem;">
@@ -344,14 +401,13 @@
       <div class="glass-effect rounded-[2.5rem] p-6" style="border-radius:2.5rem;">
         <h3 class="text-xl font-semibold text-white mb-6">Acciones Rápidas</h3>
         <div class="space-y-3">
-          {% if permissions.add_cita %}
-          <a href="{% url 'doctor:cita_create' %}?fecha={{ fecha_actual }}" class="w-full p-4 text-left bg-white/10 hover:bg-white/20 rounded-2xl transition-all duration-200 flex items-center gap-3 text-white">
+          <button type='button' id='btn-nueva-cita-modal' class='w-full p-4 text-left bg-white/10 hover:bg-white/20 rounded-2xl transition-all duration-200 flex items-center gap-3 text-white'
+            onclick="window.location.href='{% url 'doctor:cita_create' %}?fecha={{ fecha_actual|date:'Y-m-d' }}&next=diario'">
             <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
               <i class="fas fa-plus"></i>
             </div>
             <span class="font-medium">Nueva Cita</span>
-          </a>
-          {% endif %}
+          </button>
           <button class="w-full p-4 text-left bg-white/10 hover:bg-white/20 rounded-2xl transition-all duration-200 flex items-center gap-3 text-white">
             <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
               <i class="fas fa-file-export"></i>
@@ -444,16 +500,11 @@
                   </div>
                 {% elif slot.estado == 'disponible' and not slot.ya_pasado and not slot.cita %}
                   {% with fecha_str=fecha_actual|date:'Y-m-d' %}
-                    <a class="slot-card slot-disponible-futuro p-4 relative {% if not permissions.add_cita %}cursor-not-allowed{% else %}cursor-pointer{% endif %}"
-                      {% if permissions.add_cita %}
-                        href="{% url 'doctor:cita_create' %}?fecha={{ fecha_str|urlencode }}&next=calendar"
-                        title="Agendar cita"
-                        onclick="console.log('Clic en slot disponible:', this.href); event.stopPropagation(); window.location.href=this.href; return false;"
-                      {% else %}
-                        tabindex="-1" aria-disabled="true" title="No tienes permiso para crear citas"
-                      {% endif %}>
+                    <div class='slot-card slot-disponible-futuro p-4 relative cursor-pointer'
+                      onclick="window.location.href='{% url 'doctor:cita_create' %}?fecha={{ fecha_str|urlencode }}&hora_cita={{ slot.hora|urlencode }}&next=diario'"
+                      title='Agendar cita'>
                       <div class="floating-tooltip" style="top: -40px; left: 50%;">
-                        {% if permissions.add_cita %}Clic para agendar nueva cita{% else %}No tienes permiso para crear citas{% endif %}
+                        Clic para agendar nueva cita
                       </div>
                       <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-3">
@@ -473,15 +524,15 @@
                         <div class="font-semibold text-gray-900">Horario Libre</div>
                         <div class="text-sm text-gray-600">Clic para agendar una cita</div>
                       </div>
-                    </a>
+                    </div>
                   {% endwith %}
                 {% elif slot.cita %}
                   {% url 'doctor:cita_update' slot.cita.id as edit_url %}
-                  {% url 'doctor:cita_delete' slot.cita.id as del_url %}
-                  <div class="slot-card slot-{{ slot.estado }} p-4 relative group" title="Ver detalles">
-                    <div class="floating-tooltip" style="top: -40px; left: 50%;">Clic para ver detalles de la cita</div>
+                  <div class="slot-card slot-{{ slot.estado }} p-4 relative group cursor-pointer" title="Editar cita"
+                       onclick="abrirModalEditarCitaPremium('{{ slot.cita.id }}', '{{ slot.hora }}')">
+                    <div class="floating-tooltip" style="top: -40px; left: 50%;">Clic para editar la cita</div>
                     <div class="flex flex-row items-center justify-end gap-6 absolute top-4 right-4 z-10">
-                      {% if permissions.change_cita %}
+                      {% if 'change_cita' in permissions %}
                         <a href="{{ edit_url }}?next=diario"
                            class="premium-button !p-3 !bg-[var(--aurora2)]/10 hover:!bg-[var(--aurora2)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--aurora2)]"
                            title="Editar"
@@ -489,7 +540,7 @@
                           <i class="fas fa-pen-to-square text-[var(--aurora1)] text-xl"></i>
                         </a>
                       {% endif %}
-                      {% if permissions.delete_cita %}
+                      {% if 'delete_cita' in permissions %}
                         <a href="#"
                            class="premium-button !p-3 !bg-red-100 hover:!bg-red-200 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
                            onclick="event.stopPropagation(); openDeleteModal('{{ slot.cita.id }}', 'Cita #{{ slot.cita.id }}'); return false;"
@@ -574,6 +625,11 @@
     </div>
     <div id="modal-eliminar-cita-content"></div>
   </div>
+</div>
+
+<!-- Modal premium para crear cita -->
+<div id="modal-crear-cita-bg">
+  <div id="modal-crear-cita-content"></div>
 </div>
 
 <script>
@@ -666,6 +722,100 @@ function confirmarEliminarCita(url) {
     alert('Error al eliminar la cita.');
     cerrarModalEliminarCita();
   });
+}
+
+// --- ABRIR MODAL CREAR CITA DESDE SLOT (delegación de eventos, robusto) ---
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('click', function(e) {
+    const slot = e.target.closest('.slot-disponible-futuro');
+    if (slot) {
+      console.log('Click en slot-disponible-futuro', slot); // DEPURACIÓN
+      e.preventDefault();
+      if (slot.classList.contains('cursor-not-allowed')) return;
+      const hora = slot.getAttribute('data-hora') || (slot.querySelector('.text-xl') && slot.querySelector('.text-xl').textContent.trim());
+      const fecha = slot.getAttribute('data-fecha') || '{{ fecha_actual|date:"Y-m-d" }}';
+      abrirModalCrearCitaPremium(fecha, hora);
+    }
+  });
+  // --- NUEVA CITA DESDE ACCIONES RÁPIDAS ---
+  const btnNuevaCita = document.getElementById('btn-nueva-cita-modal');
+  if (btnNuevaCita) {
+    btnNuevaCita.addEventListener('click', function(e) {
+      e.preventDefault();
+      const fecha = '{{ fecha_actual|date:"Y-m-d" }}';
+      abrirModalCrearCitaPremium(fecha, '');
+    });
+  }
+});
+
+// --- NUEVA CITA DESDE ACCIONES RÁPIDAS ---
+const btnNuevaCita = document.getElementById('btn-nueva-cita-modal');
+if (btnNuevaCita) {
+  btnNuevaCita.addEventListener('click', function(e) {
+    e.preventDefault();
+    const fecha = '{{ fecha_actual|date:"Y-m-d" }}';
+    abrirModalCrearCitaPremium(fecha, '');
+  });
+}
+
+function abrirModalCrearCitaPremium(fecha, hora) {
+  const modalBg = document.getElementById('modal-crear-cita-bg');
+  const modalContent = document.getElementById('modal-crear-cita-content');
+  modalContent.innerHTML = '<div class="flex justify-center items-center min-h-[200px] text-gray-400"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
+  modalBg.style.display = 'flex';
+  setTimeout(() => modalBg.classList.add('show'), 10);
+  // CORREGIDO: Usar la URL correcta para el modal AJAX premium y enviar cabecera AJAX
+  fetch(`/doctor/citas/create/modal/?ajax=1&fecha=${encodeURIComponent(fecha)}&hora=${encodeURIComponent(hora)}`, {
+    headers: {'X-Requested-With': 'XMLHttpRequest'}
+  })
+    .then(r => r.text())
+    .then(html => {
+      modalContent.innerHTML = html;
+      modalContent.scrollIntoView({behavior:'smooth', block:'center'});
+      bindFormAjaxCita(modalContent.querySelector('form'), hora);
+    })
+    .catch(() => {
+      modalContent.innerHTML = '<div class="p-8 text-center text-danger">Error al cargar el formulario de cita.</div>';
+    });
+  modalBg.onclick = function(e) { if (e.target === modalBg) cerrarModalCrearCitaPremium(); };
+}
+function cerrarModalCrearCitaPremium() {
+  const modalBg = document.getElementById('modal-crear-cita-bg');
+  modalBg.classList.remove('show');
+  setTimeout(() => { modalBg.style.display = 'none'; }, 200);
+}
+// --- BIND AJAX FORM CITA ---
+function bindFormAjaxCita(form, hora) {
+  if (!form) return;
+  // Si hay input de hora, setear el valor
+  if (hora && form.querySelector('[name="hora_cita"]')) {
+    form.querySelector('[name="hora_cita"]').value = hora;
+  }
+  form.onsubmit = function(e) {
+    e.preventDefault();
+    const formData = new FormData(form);
+    fetch(form.action, {
+      method: form.method,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        cerrarModalCrearCitaPremium();
+        window.location.reload();
+      } else if (data.html) {
+        document.getElementById('modal-crear-cita-content').innerHTML = data.html;
+        bindFormAjaxCita(document.getElementById('modal-crear-cita-content').querySelector('form'), hora);
+      } else {
+        alert('Error al guardar la cita.');
+      }
+    })
+    .catch(() => {
+      alert('Error de red al guardar la cita.');
+    });
+    return false;
+  };
 }
 
 // --- UTILIDADES ---

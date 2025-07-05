@@ -2,21 +2,87 @@
 {% load static %}
 {% block title %}Detalle de Pago{% endblock %}
 {% block content %}
+<style>
+.premium-card {
+    background: linear-gradient(135deg, #f7faff 0%, #e6edff 100%);
+    border-radius: 22px;
+    box-shadow: 0 8px 40px rgba(42,59,143,0.13), 0 1.5px 8px rgba(42,59,143,0.08);
+    border: 1.5px solid #e0e7ff;
+}
+.premium-table-header {
+    background: linear-gradient(90deg, #e6edff 60%, #f0f4ff 100%);
+    color: #2a3b8f;
+    font-weight: bold;
+    border-bottom: 2.5px solid #bfcfff;
+    padding: 0.7rem 0.8rem;
+    font-size: 1.08rem;
+}
+.premium-cell {
+    background: #f8faff;
+    border: 1px solid #bfcfff;
+    padding: 0.6rem 0.8rem;
+    font-size: 1.05rem;
+}
+.premium-form-btn {
+    background: linear-gradient(90deg, #2a3b8f 60%, #4f8cff 100%);
+    color: #fff;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 0.7rem 1.5rem;
+    box-shadow: 0 2px 8px #e6edff33;
+    transition: background 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+}
+.premium-form-btn:hover {
+    background: linear-gradient(90deg, #4f8cff 60%, #2a3b8f 100%);
+    box-shadow: 0 4px 16px #bfcfff55;
+}
+.premium-form-cancel {
+    background: #f0f4ff;
+    color: #2a3b8f;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 0.7rem 1.5rem;
+    box-shadow: 0 2px 8px #e6edff33;
+    transition: background 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+}
+.premium-form-cancel:hover {
+    background: #e6edff;
+    color: #1a2b6f;
+    box-shadow: 0 4px 16px #bfcfff55;
+}
+.separador {
+    border-top: 2.5px dashed #bfcfff;
+    margin: 2.2rem 0 1.2rem 0;
+}
+</style>
 <div class="premium-card max-w-3xl mx-auto mt-8 p-8">
     <h2 class="text-3xl font-bold mb-6 text-[var(--aurora1)] flex items-center gap-3">
         <i class="fas fa-money-bill-wave text-[var(--gold-premium)]"></i>
         Detalle del Pago #{{ pago.id }}
     </h2>
-    <div class="mb-6">
-        <strong>Pagador:</strong> {{ pago.nombre_pagador|default:'-' }}<br>
-        <strong>Atención:</strong> {{ pago.atencion|default:'-' }}<br>
-        <strong>Método:</strong> {{ pago.get_metodo_pago_display }}<br>
-        <strong>Monto Total:</strong> ${{ pago.monto_total }}<br>
-        <strong>Estado:</strong> {{ pago.get_estado_display }}<br>
-        <strong>Fecha:</strong> {{ pago.fecha_pago|date:'d/m/Y H:i' }}
+    <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <div><strong>Pagador:</strong> <span class="text-blue-900">{{ pago.nombre_pagador|default:'-' }}</span></div>
+            <div><strong>Atención:</strong> <span class="text-blue-900">{{ pago.atencion|default:'-' }}</span></div>
+            <div><strong>Método:</strong> <span class="text-blue-900">{{ pago.get_metodo_pago_display }}</span></div>
+        </div>
+        <div>
+            <div><strong>Monto Total:</strong> <span class="text-green-700 font-bold">${{ pago.monto_total }}</span></div>
+            <div><strong>Estado:</strong> <span class="text-blue-900">{{ pago.get_estado_display }}</span></div>
+            <div><strong>Fecha:</strong> <span class="text-blue-900">{{ pago.fecha_pago|date:'d/m/Y H:i' }}</span></div>
+        </div>
     </div>
-    <h3 class="text-xl font-semibold mb-4">Detalle de Items</h3>
-    <table class="w-full text-center mb-8">
+    <hr class="separador">
+    <h3 class="text-xl font-semibold mb-4 text-[var(--aurora1)]">Detalle de Items</h3>
+    <table class="w-full text-center mb-8 premium-table">
         <thead>
             <tr>
                 <th class="premium-table-header">Descripción</th>
@@ -36,11 +102,13 @@
             {% endfor %}
         </tbody>
     </table>
-    <a href="{% url 'doctor:imprimir_pago_pdf' pago.id %}" target="_blank" class="premium-form-btn">
-        <i class="fas fa-file-pdf"></i> Imprimir PDF
-    </a>
-    <a href="{% url 'doctor:pagos_list' %}" class="premium-form-cancel ml-4">
-        <i class="fas fa-arrow-left"></i> Volver
-    </a>
+    <div class="flex flex-wrap gap-4 mt-6">
+        <a href="{% url 'doctor:imprimir_pago_pdf' pago.id %}" target="_blank" class="premium-form-btn">
+            <i class="fas fa-file-pdf"></i> Imprimir PDF
+        </a>
+        <a href="{% url 'doctor:pagos_list' %}" class="premium-form-cancel ml-0 md:ml-4">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
 </div>
 {% endblock %}

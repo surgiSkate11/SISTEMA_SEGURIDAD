@@ -10,6 +10,7 @@
   <div class="flex gap-6 items-center pl-4 pr-2">
     <a href="{% url 'doctor:calendario_diario' %}" id="nav-diaria" class="nav-btn btn-premium flex items-center justify-center text-center{% if request.resolver_match.url_name == 'calendario_diario' %} bg-primary-blue text-white{% endif %}">Diario</a>
     <a href="{% url 'doctor:calendario_semanal' %}" id="nav-semanal" class="nav-btn btn-premium flex items-center justify-center text-center{% if request.resolver_match.url_name == 'calendario_semanal' %} bg-primary-blue text-white{% endif %}">Semanal</a>
+    <a href="{% url 'doctor:calendario_mensual' %}" id="nav-mensual" class="nav-btn btn-premium flex items-center justify-center text-center{% if request.resolver_match.url_name == 'calendario_mensual' %} bg-primary-blue text-white{% endif %}">Mensual</a>
   </div>
 </div>
 

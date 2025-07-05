@@ -66,10 +66,9 @@
             <table class="w-full">
                 <thead>
                     <tr>
-                        <th class="premium-table-header text-center">Paciente</th>
                         <th class="premium-table-header text-center">Código</th>
                         <th class="premium-table-header text-center">Descripción</th>
-                        <th class="premium-table-header text-center">Fecha</th>
+                        <th class="premium-table-header text-center">Datos adicionales</th>
                         <th class="premium-table-header text-center">Acciones</th>
                     </tr>
                 </thead>
@@ -78,7 +77,7 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="5" class="p-0">
+                        <td colspan="4" class="p-0">
                             <a href="{% url 'core:diagnostico_create' %}"
                                class="block w-full text-center py-4 premium-gradient text-white font-bold text-lg rounded-b-3xl hover:from-[var(--aurora2)] hover:to-[var(--aurora1)] transition-all duration-300 flex items-center justify-center gap-3">
                                 <span class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20">

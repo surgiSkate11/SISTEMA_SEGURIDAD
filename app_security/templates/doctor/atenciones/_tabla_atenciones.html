@@ -18,6 +18,11 @@
                title="Editar">
                 <i class="fas fa-pen-to-square text-[var(--aurora1)] text-xl"></i>
             </a>
+            <a href="{% url 'doctor:imprimir_atencion_pdf' atencion.id %}" target="_blank"
+               class="premium-button !p-3 !bg-[var(--gold-premium)]/10 hover:!bg-[var(--gold-premium)]/20 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--gold-premium)]"
+               title="Imprimir PDF">
+                <i class="fas fa-file-pdf text-[var(--gold-premium)] text-xl"></i>
+            </a>
             <a href="#"
                class="premium-button !p-3 !bg-red-100 hover:!bg-red-200 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
                onclick="openDeleteModal('{{ atencion.id }}', 'Atención #{{ atencion.id }}')"
