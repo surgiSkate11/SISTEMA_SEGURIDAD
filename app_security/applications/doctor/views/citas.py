@@ -732,6 +732,17 @@ class CalendarioDiarioView(SidebarMenuMixin, TemplateView):
         return context
 
 def calendario_diario(request):
+    # Actualizar estados antes de mostrar
+    fecha_actual = request.GET.get('fecha')
+    if fecha_actual:
+        try:
+            fecha_actual = datetime.datetime.strptime(fecha_actual, '%Y-%m-%d').date()
+        except Exception:
+            fecha_actual = timezone.localdate()
+    else:
+        fecha_actual = timezone.localdate()
+    actualizar_citas_ocupadas_a_atendidas(fecha_actual)
+
     # Obtener el doctor único
     doctor = Doctor.objects.first()
     if not doctor:
@@ -1019,5 +1030,29 @@ class CitaMedicaForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+def actualizar_citas_ocupadas_a_atendidas(fecha=None):
+    """
+    Actualiza todas las citas en estado 'ocupado' cuya fecha y hora ya pasaron a 'atendido'.
+    Si se pasa una fecha, solo actualiza las de ese día.
+    """
+    from django.utils import timezone
+    from datetime import datetime, time
+    now = timezone.localtime()
+    if fecha is None:
+        fecha = now.date()
+    # Solo citas de hoy o anteriores
+    from applications.doctor.utils.cita_medica import EstadoCitaChoices
+    from applications.doctor.models import CitaMedica
+    citas = CitaMedica.objects.filter(
+        fecha=fecha,
+        estado=EstadoCitaChoices.OCUPADO
+    )
+    for cita in citas:
+        cita_datetime = datetime.combine(cita.fecha, cita.hora_cita)
+        cita_datetime = timezone.make_aware(cita_datetime, now.tzinfo)
+        if cita_datetime <= now:
+            cita.estado = EstadoCitaChoices.ATENDIDO
+            cita.save(update_fields=["estado"])
 
 
