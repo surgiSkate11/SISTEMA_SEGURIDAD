@@ -4,6 +4,7 @@ from applications.doctor.models import CitaMedica
 from applications.core.models import Paciente
 from applications.doctor.utils.horarios import obtener_horarios_disponibles_para_fecha
 from django.forms import ChoiceField
+import datetime
 
 class CitaMedicaForm(forms.ModelForm):
     class Meta:
@@ -15,16 +16,20 @@ class CitaMedicaForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        # doctor = kwargs.pop('doctor', None)  # Ya no se usa
         super().__init__(*args, **kwargs)
         self.fields['paciente'].queryset = Paciente.active_patient.all()
         self.fields['hora_cita'].widget = forms.HiddenInput()
+        # Ocultar el campo estado y ponerle un valor por defecto si es creación
+        if 'estado' in self.fields:
+            self.fields['estado'].widget = forms.HiddenInput()
+            if not self.instance.pk:
+                self.fields['estado'].required = False
+                self.initial['estado'] = 'ocupado'
 
         fecha = self.data.get('fecha') or self.initial.get('fecha')
         hora_enviado = self.data.get('hora_cita')
 
         if fecha:
-            import datetime
             try:
                 if isinstance(fecha, str):
                     fecha = datetime.datetime.strptime(fecha, '%Y-%m-%d').date()
@@ -55,6 +60,13 @@ class CitaMedicaForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        # Si el campo estado está oculto y no viene en POST, ponerle un valor por defecto
+        if 'estado' in self.fields and not cleaned_data.get('estado'):
+            if not self.instance.pk:
+                cleaned_data['estado'] = 'ocupado'
+            else:
+                cleaned_data['estado'] = self.instance.estado
+
         paciente = cleaned_data.get('paciente')
         fecha = cleaned_data.get('fecha')
         hora = cleaned_data.get('hora_cita')
@@ -81,7 +93,16 @@ class CitaMedicaForm(forms.ModelForm):
         # Asignar automáticamente el doctor si es doctor autenticado
         if hasattr(self, 'user') and self.user and hasattr(self.user, 'doctor'):
             instance.doctor = self.user.doctor
+        # Lógica automática de estado:
+        # Si la cita es nueva, siempre inicia como 'ocupado'
+        if not instance.pk:
+            instance.estado = 'ocupado'
+        else:
+            # Si la cita ya existe, actualizar estado según la hora
+            ahora = timezone.localtime()
+            cita_datetime = timezone.make_aware(datetime.datetime.combine(instance.fecha, instance.hora_cita))
+            if instance.estado == 'ocupado' and cita_datetime < ahora:
+                instance.estado = 'atendido'
         if commit:
             instance.save()
-            self.save_m2m()
         return instance

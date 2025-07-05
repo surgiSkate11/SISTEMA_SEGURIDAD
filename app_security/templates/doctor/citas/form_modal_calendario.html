@@ -277,23 +277,42 @@
                 <input type="hidden" id="id_paciente" name="paciente" value="{{ form.initial.paciente|default:'' }}">
                 <div id="paciente-suggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden"></div>
             </div>
+            <button type="button" id="crear-paciente-btn" class="mt-2 premium-form-btn" style="background:var(--aurora2); color:#fff;">
+                <i class="fas fa-user-plus"></i> Crear paciente
+            </button>
         </div>
-        {% for field in form.visible_fields %}
-            {% if field.name == 'fecha' or field.name == 'hora_cita' %}
-                <input type="hidden" name="{{ field.name }}" id="id_{{ field.name }}" value="{{ field.value|default:form.initial.fecha|default:request.GET.fecha }}">
-            {% elif field.name != 'paciente' %}
-                <div class="premium-form-group {% if field.errors %}has-error{% endif %}">
-                    <label for="{{ field.id_for_label }}" class="premium-form-label">{{ field.label }} {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
-                    <div class="premium-input-wrapper">
-                        <i class="fas fa-pen premium-input-icon"></i>
-                        {{ field }}
-                    </div>
-                    {% if field.errors %}
-                    <div class="premium-form-error">{{ field.errors|striptags }}</div>
-                    {% endif %}
-                </div>
-            {% endif %}
+        {# Ocultar fecha y hora como hidden #}
+        {% for field in form.hidden_fields %}
+            {{ field }}
         {% endfor %}
+        <input type="hidden" name="fecha" id="id_fecha" value="{{ form.initial.fecha|default:request.GET.fecha }}">
+        <input type="hidden" name="hora_cita" id="id_hora_cita" value="{{ form.initial.hora_cita|default:request.GET.hora }}">
+        {# Mostrar solo el campo de observaciones si existe #}
+        {% if form.observaciones %}
+        <div class="premium-form-group {% if form.observaciones.errors %}has-error{% endif %}">
+            <label for="{{ form.observaciones.id_for_label }}" class="premium-form-label">{{ form.observaciones.label }} {% if form.observaciones.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+            <div class="premium-input-wrapper">
+                <i class="fas fa-pen premium-input-icon"></i>
+                {{ form.observaciones }}
+            </div>
+            {% if form.observaciones.errors %}
+            <div class="premium-form-error">{{ form.observaciones.errors|striptags }}</div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {# Si el campo se llama nota o similar, agregar aquí #}
+        {% if form.nota %}
+        <div class="premium-form-group {% if form.nota.errors %}has-error{% endif %}">
+            <label for="{{ form.nota.id_for_label }}" class="premium-form-label">{{ form.nota.label }} {% if form.nota.field.required %}<span class="text-red-500">*</span>{% endif %}</label>
+            <div class="premium-input-wrapper">
+                <i class="fas fa-pen premium-input-icon"></i>
+                {{ form.nota }}
+            </div>
+            {% if form.nota.errors %}
+            <div class="premium-form-error">{{ form.nota.errors|striptags }}</div>
+            {% endif %}
+        </div>
+        {% endif %}
         {% if form.non_field_errors %}
         <div class="premium-form-error mt-4">
             {% for error in form.non_field_errors %}
@@ -309,7 +328,7 @@
                 <i class="fas fa-floppy-disk"></i>
                 Guardar
             </button>
-            <button type="button" class="premium-form-cancel" onclick="window.cerrarModalCrearCitaPremium && window.cerrarModalCrearCitaPremium()">
+            <button type="button" class="premium-form-cancel ml-4" onclick="window.cerrarModalCrearCitaPremium && window.cerrarModalCrearCitaPremium()">
                 <i class="fas fa-xmark"></i>
                 Cancelar
             </button>
@@ -368,4 +387,59 @@ function initPacienteAutocompletePremium() {
 // Llama a la función después de renderizar el modal
 setTimeout(initPacienteAutocompletePremium, 200);
 window.UNICO_DOCTOR_ID = '{{ doctor_id|default:"null" }}';
+
+// --- Función global para cerrar el modal premium (asegura que siempre esté disponible) ---
+window.cerrarModalCrearCitaPremium = function() {
+    const modalBg = document.getElementById('modal-crear-cita-bg');
+    if (modalBg) {
+        modalBg.classList.remove('show');
+        setTimeout(() => { modalBg.style.display = 'none'; }, 200);
+    }
+};
+
+// --- Manejo AJAX de submit para el modal premium ---
+document.getElementById('citaForm').onsubmit = function(e) {
+    e.preventDefault();
+    const form = this;
+    const formData = new FormData(form);
+    fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            if (window.toastr) toastr.success('Cita guardada correctamente');
+            if (window.cerrarModalCrearCitaPremium) window.cerrarModalCrearCitaPremium();
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                window.location.reload();
+            }
+        } else if (data.html) {
+            // Reemplaza solo el formulario dentro de la tarjeta, no toda la tarjeta
+            const formCard = form.closest('.premium-form-card');
+            if (formCard && data.html) {
+                // Extraer solo el <form> del HTML devuelto
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.html;
+                const newForm = tempDiv.querySelector('form');
+                if (newForm) {
+                    formCard.querySelector('form').replaceWith(newForm);
+                } else {
+                    // fallback: reemplaza todo el innerHTML si no se encuentra el form
+                    formCard.innerHTML = data.html;
+                }
+            }
+            if (window.toastr) toastr.error('Corrige los errores en el formulario');
+        } else {
+            alert('Error al guardar la cita.');
+        }
+    })
+    .catch(() => {
+        alert('Error de red al guardar la cita.');
+    });
+    return false;
+};
 </script>

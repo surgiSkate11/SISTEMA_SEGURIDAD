@@ -76,7 +76,8 @@
                                 <a href="#"
                                    class="premium-button !p-3 !bg-red-100 hover:!bg-red-200 !shadow-none rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
                                    onclick="openDeleteModal('{{ horario.pk }}', 'Horario de {{ horario.get_dia_semana_display }}')"
-                                   title="Eliminar">
+                                   title="Eliminar"
+                                   data-delete-url="/doctor/horarios/delete/{{ horario.pk }}/">
                                     <i class="fas fa-trash-can text-red-600 text-xl"></i>
                                 </a>
                             </div>

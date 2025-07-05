@@ -45,6 +45,8 @@ function openDeleteModal(id, name) {
         actionUrl = '/doctor/citas/' + id + '/eliminar/';
     } else if (window.location.pathname.includes('atenciones')) {
         actionUrl = '/doctor/atenciones/' + id + '/delete/';
+    } else if (window.location.pathname.includes('horarios')) {
+        actionUrl = '/doctor/horarios/delete/' + id + '/';
     } else {
         // Fallback: busca el primer form con action que contenga /delete/
         const forms = document.querySelectorAll('form');

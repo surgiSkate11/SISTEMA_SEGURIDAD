@@ -34,6 +34,14 @@ class HorarioAtencionCreateView(SidebarMenuMixin, PermissionMixin, CreateViewMix
     permission_required = 'add_horarioatencion'
 
     def form_valid(self, form):
+        # Asignar el único doctor global del sistema
+        from applications.core.models import Doctor
+        doctor = Doctor.objects.filter(activo=True).first()
+        if doctor:
+            form.instance.doctor = doctor
+        else:
+            messages.error(self.request, "No se puede crear el horario: no hay doctor registrado en el sistema.")
+            return self.form_invalid(form)
         messages.success(self.request, "Horario de atención creado exitosamente.")
         return super().form_valid(form)
 

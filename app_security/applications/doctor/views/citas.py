@@ -44,6 +44,18 @@ class CitaListView(SidebarMenuMixin, PermissionMixin, ListViewMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        # --- ACTUALIZAR ESTADO DE CITAS OCUPADAS CUYA FECHA Y HORA YA PASARON ---
+        from django.utils import timezone
+        from datetime import datetime
+        now = timezone.localtime()
+        citas_ocupadas = queryset.filter(estado=EstadoCitaChoices.OCUPADO)
+        for cita in citas_ocupadas:
+            cita_datetime = datetime.combine(cita.fecha, cita.hora_cita)
+            cita_datetime = timezone.make_aware(cita_datetime, now.tzinfo)
+            if cita_datetime <= now:
+                cita.estado = EstadoCitaChoices.ATENDIDO
+                cita.save(update_fields=["estado"])
+        # --- FIN ACTUALIZACIÓN AUTOMÁTICA ---
         search = self.request.GET.get('q') or self.request.GET.get('search', '')
         mes = self.request.GET.get('mes')
         anio = self.request.GET.get('anio')
@@ -83,6 +95,8 @@ class CitaListView(SidebarMenuMixin, PermissionMixin, ListViewMixin, ListView):
             selected_month = str(hoy.month)
         context['selected_year'] = int(selected_year)
         context['selected_month'] = int(selected_month)
+        # Total de citas para el header (usar queryset sin paginación ni filtro)
+        context['total_citas'] = CitaMedica.objects.count()
         # Debug en template
         context['debug_available_years'] = context['available_years']
         context['debug_meses'] = context['meses']
@@ -103,6 +117,21 @@ class CitaCreateView(SidebarMenuMixin, PermissionMixin, CreateViewMixin, CreateV
     template_name = 'doctor/citas/form.html'
     success_url = reverse_lazy('doctor:citas_list')
     permission_required = 'add_cita'
+
+    def dispatch(self, request, *args, **kwargs):
+        # Si viene desde el calendario (tiene fecha y hora) y no es AJAX, redirigir al flujo premium reducido
+        if request.method == 'GET' and not (request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1'):
+            fecha = request.GET.get('fecha')
+            hora = request.GET.get('hora') or request.GET.get('hora_cita')
+            if fecha and hora:
+                from django.urls import reverse
+                from django.http import HttpResponseRedirect
+                url = f"{reverse('doctor:cita_create_modal')}?ajax=1&fecha={fecha}&hora={hora}"
+                next_param = request.GET.get('next')
+                if next_param:
+                    url += f"&next={next_param}"
+                return HttpResponseRedirect(url)
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -205,6 +234,18 @@ class CitaMedicaListView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequire
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        # --- ACTUALIZAR ESTADO DE CITAS OCUPADAS CUYA FECHA Y HORA YA PASARON ---
+        from django.utils import timezone
+        from datetime import datetime
+        now = timezone.localtime()
+        citas_ocupadas = queryset.filter(estado=EstadoCitaChoices.OCUPADO)
+        for cita in citas_ocupadas:
+            cita_datetime = datetime.combine(cita.fecha, cita.hora_cita)
+            cita_datetime = timezone.make_aware(cita_datetime, now.tzinfo)
+            if cita_datetime <= now:
+                cita.estado = EstadoCitaChoices.ATENDIDO
+                cita.save(update_fields=["estado"])
+        # --- FIN ACTUALIZACIÓN AUTOMÁTICA ---
         q = self.request.GET.get('q', '')
         if q:
             queryset = queryset.filter(
@@ -228,6 +269,21 @@ class CitaMedicaCreateView(SidebarMenuMixin, LoginRequiredMixin, PermissionRequi
     form_class = CitaMedicaForm
     template_name = 'doctor/citas/form.html'
     permission_required = 'doctor.add_citamedica'
+
+    def dispatch(self, request, *args, **kwargs):
+        # Si viene desde el calendario (tiene fecha y hora) y no es AJAX, redirigir al flujo premium reducido
+        if request.method == 'GET' and not (request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1'):
+            fecha = request.GET.get('fecha')
+            hora = request.GET.get('hora') or request.GET.get('hora_cita')
+            if fecha and hora:
+                from django.urls import reverse
+                from django.http import HttpResponseRedirect
+                url = f"{reverse('doctor:cita_create_modal')}?ajax=1&fecha={fecha}&hora={hora}"
+                next_param = request.GET.get('next')
+                if next_param:
+                    url += f"&next={next_param}"
+                return HttpResponseRedirect(url)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -926,5 +982,42 @@ def calendario_crear_cita(request):
             context = {'form': form, 'request': request, 'doctor': getattr(request.user, 'doctor', None), 'doctor_id': getattr(getattr(request.user, 'doctor', None), 'id', None)}
             html = render_to_string('doctor/citas/form_modal_calendario.html', context, request=request)
             return JsonResponse({'success': False, 'html': html})
+
+from django import forms
+from applications.doctor.utils.cita_medica import EstadoCitaChoices
+from django.utils import timezone
+
+class CitaMedicaForm(forms.ModelForm):
+    class Meta:
+        model = CitaMedica
+        fields = ['paciente', 'fecha', 'hora_cita', 'observaciones']  # Excluir 'estado' intencionalmente
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Personalizar widgets si es necesario
+        self.fields['fecha'].widget.attrs.update({'class': 'datepicker'})
+        self.fields['hora_cita'].widget.attrs.update({'class': 'timepicker'})
+
+    def clean_fecha(self):
+        fecha = self.cleaned_data.get('fecha')
+        if fecha and fecha < timezone.localdate():
+            raise forms.ValidationError("La fecha no puede ser en el pasado.")
+        return fecha
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        # Lógica automática de estado:
+        # Si la cita es nueva, siempre inicia como 'ocupado'
+        if not instance.pk:
+            instance.estado = EstadoCitaChoices.OCUPADO
+        else:
+            # Si la cita ya existe, actualizar estado según la hora
+            ahora = timezone.localtime()
+            cita_datetime = timezone.make_aware(datetime.datetime.combine(instance.fecha, instance.hora_cita))
+            if instance.estado == EstadoCitaChoices.OCUPADO and cita_datetime < ahora:
+                instance.estado = EstadoCitaChoices.ATENDIDO
+        if commit:
+            instance.save()
+        return instance
 
 
